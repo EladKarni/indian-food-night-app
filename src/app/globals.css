@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.input-box {
+  @apply w-full h-10 bg-white text-[#2a4966] text-xs leading-4 px-2 py-0 rounded-2xl;
+  font-family: "Poppins";
+  outline: none;
+}
+
 /* The accordion functionality */
 .accordion-animation-wrapper {
   display: grid;

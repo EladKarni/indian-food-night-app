@@ -6,9 +6,16 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "upload-menu": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' src/scripts/uploadMenu.ts",
+    "test-supabase": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' src/scripts/testSupabase.ts",
+    "menu-to-csv": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' src/scripts/menuToCSV.ts"
   },
   "dependencies": {
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.2",
     "clsx": "^2.1.1",
     "daisyui": "^4.11.1",
     "next": "15.3.4",
@@ -21,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",
+    "dotenv": "^17.2.2",
     "eslint": "^8",
     "eslint-config-next": "15.3.4",
     "postcss": "^8",

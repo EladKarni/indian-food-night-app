@@ -1,27 +1,31 @@
-import { faqType } from "@/types/faqType";
-import FAQSection from "@/views/faq";
+import Link from "next/link";
 
-type PostType = {
-  userId: number;
-  id: number;
-  title: string;
-  body: string;
-};
-
-export default async function Home() {
-  const posts = await fetch("https://jsonplaceholder.typicode.com/posts")
-    .then((response) => response.json())
-    .then((data) => data.filter((post: PostType) => post.id < 5));
-
-  const faqItems: faqType[] = posts.map((post: PostType) => ({
-    id: post.id.toString(),
-    question: post.title,
-    answer: post.body,
-  }));
-
+export default function Home() {
   return (
-    <main className="text-center max-w-[1100px] m-4 xl:mx-auto">
-      <FAQSection faqItems={faqItems} />
+    <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex flex-col items-center justify-center p-4">
+      <div className="text-center space-y-16">
+        <h1 className="text-8xl font-bold text-slate-800 tracking-wider">
+          IFN
+        </h1>
+
+        <div className="space-y-8">
+          <Link
+            href="/order"
+            className="inline-block bg-orange-400 hover:bg-orange-500 text-white font-semibold py-4 px-12 rounded-full text-lg transition-colors duration-200 shadow-lg"
+          >
+            Get started
+          </Link>
+
+          <div>
+            <Link
+              href="/login"
+              className="text-slate-700 hover:text-slate-900 font-medium text-lg transition-colors duration-200"
+            >
+              Host? Log in
+            </Link>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

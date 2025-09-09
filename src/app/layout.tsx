@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-
-import Footer from "@/components/footer";
-import Navbar from "@/components/navbar";
-import NavLinks from "@/components/NavLinks";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { MenuProvider } from "@/contexts/MenuContext";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,11 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dim" className="scroll-smooth">
       <body className={inter.className}>
-        <Navbar>
-          <NavLinks />
-        </Navbar>
-        {children}
-        <Footer />
+        <AuthProvider>
+          <MenuProvider>
+            {children}
+          </MenuProvider>
+        </AuthProvider>
       </body>
     </html>
   );

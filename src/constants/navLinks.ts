@@ -19,4 +19,9 @@ export const navLinkList = [
     style: "default",
     url: "#contact",
   },
+  {
+    label: "Dashboard",
+    style: "default",
+    url: "/dashboard",
+  },
 ];
