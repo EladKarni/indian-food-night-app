@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Button from "@/ui/button";
 import OrderItem from "@/components/OrderItem";
 import UserInfo from "@/components/UserInfo";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { faqItems } from "@/constants/faq";
 
 interface OrderItemData {
   id: string;

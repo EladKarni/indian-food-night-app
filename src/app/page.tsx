@@ -1,6 +1,31 @@
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
-export default function Home() {
+async function checkForEvents() {
+  if (!supabase) return false;
+
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .gte("event_date", "now()")
+      .limit(1);
+
+    if (error) {
+      console.error("Error checking for events:", error);
+      return false;
+    }
+
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("Error checking for events:", error);
+    return false;
+  }
+}
+
+export default async function Home() {
+  const hasEvents = await checkForEvents();
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex flex-col items-center justify-center p-4">
       <div className="text-center space-y-16">
@@ -10,10 +35,10 @@ export default function Home() {
 
         <div className="space-y-8">
           <Link
-            href="/order"
+            href={hasEvents ? "/order" : "/login"}
             className="inline-block bg-orange-400 hover:bg-orange-500 text-white font-semibold py-4 px-12 rounded-full text-lg transition-colors duration-200 shadow-lg"
           >
-            Get started
+            {hasEvents ? "Get started" : "Login to Host"}
           </Link>
 
           <div>
