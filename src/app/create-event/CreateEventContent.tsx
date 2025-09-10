@@ -1,61 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { getNextWednesday } from "@/util/dateUtils";
+import Link from "next/link";
+import router from "next/router";
+import { useState } from "react";
 
 export default function CreateEventContent() {
   const { user } = useAuth();
-  const router = useRouter();
+
   const [loading, setLoading] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
-
-  const getNextWednesday = () => {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 = Sunday, 3 = Wednesday
-    const daysUntilWednesday = (3 - dayOfWeek + 7) % 7;
-    const nextWednesday = new Date(today);
-    nextWednesday.setDate(
-      today.getDate() + (daysUntilWednesday === 0 ? 7 : daysUntilWednesday)
-    );
-    return nextWednesday.toISOString().split("T")[0];
-  };
-
   const [formData, setFormData] = useState({
-    event_date: getNextWednesday(),
-    time: "",
-    location: "",
+    event_date: new Date(getNextWednesday()).toISOString().split("T")[0],
+    time: "18:30",
+    restaurant: "Coriander Indian Grill",
+    location: user?.user_metadata.address,
   });
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!supabase || !user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (!error && data) {
-          setUserProfile(data);
-          // Set default location to user's address if available
-          if (data.address) {
-            setFormData((prev) => ({
-              ...prev,
-              location: data.address,
-            }));
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -78,6 +39,8 @@ export default function CreateEventContent() {
         .insert({
           event_date: formData.event_date,
           location: formData.location,
+          restaurant: formData.restaurant,
+          start_time: formData.time,
           host_id: user.id,
         })
         .select()
@@ -143,6 +106,21 @@ export default function CreateEventContent() {
 
               <div>
                 <label className="label">
+                  <span className="label-text font-medium">
+                    Restaurant <i>(optional - defaults to Coriander)</i>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="restaurant"
+                  value={formData.restaurant}
+                  onChange={handleInputChange}
+                  placeholder="Coriander Indian Grill"
+                  className="input input-bordered w-full"
+                />
+              </div>
+              <div>
+                <label className="label">
                   <span className="label-text font-medium">Location *</span>
                 </label>
                 <input
@@ -150,9 +128,8 @@ export default function CreateEventContent() {
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  placeholder="Where will the event be held?"
+                  placeholder="Coriander Indian Grill"
                   className="input input-bordered w-full"
-                  required
                 />
               </div>
             </div>
@@ -160,19 +137,10 @@ export default function CreateEventContent() {
         </div>
 
         <div className="flex gap-4 justify-end">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => router.push("/dashboard")}
-            disabled={loading}
-          >
+          <Link href="/dashboard" className="btn btn-outline">
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading || !formData.event_date || !formData.location}
-          >
+          </Link>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>

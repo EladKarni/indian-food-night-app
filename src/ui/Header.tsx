@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Button from "./button";
 import LoginButton from "@/components/LoginButton";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface HeaderProps {
   title?: string;
@@ -20,7 +21,6 @@ const Header = ({
   variant = "default",
 }: HeaderProps) => {
   const { user, signOut } = useAuth();
-  const router = useRouter();
 
   const variantClasses = {
     default: "bg-white shadow-md",
@@ -34,24 +34,22 @@ const Header = ({
     gradient: "text-white",
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <header
-      className={`w-full py-4 px-6 flex items-center justify-between ${variantClasses[variant]} ${className}`}
+      className={`w-full min-h-20 py-4 px-6 flex items-center justify-between ${variantClasses[variant]} ${className}`}
     >
       {/* Left side - Back button or Logo */}
       <div className="flex flex-col items-center space-x-4">
         {user && (
-          <>
+          <Link href="/dashboard" className="flex items-center space-x-2">
             <span className={`text-sm ${textColorClasses[variant]} opacity-75`}>
               {user.user_metadata?.full_name || user.email}
             </span>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="bg-slate-700 text-white px-2 py-1 rounded hover:bg-slate-800 transition-colors"
-            >
-              Dashboard
-            </button>
-          </>
+          </Link>
         )}
       </div>
 
@@ -63,20 +61,16 @@ const Header = ({
       {/* Right side - Auth actions */}
       {showAuth && (
         <div className="flex items-center space-x-3">
-          {user ? (
-            <div className="flex items-center space-x-3">
-              <Button
-                size="sm"
-                variant={variant === "gradient" ? "secondary" : "outline"}
-                fullWidth={false}
-                onClick={() => signOut()}
-              >
-                Sign Out
-              </Button>
-            </div>
-          ) : (
-            <LoginButton>Login as Host</LoginButton>
-          )}
+          <div className="flex items-center space-x-3">
+            <Button
+              size="sm"
+              variant={variant === "gradient" ? "secondary" : "outline"}
+              fullWidth={false}
+              onClick={() => signOut()}
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       )}
     </header>

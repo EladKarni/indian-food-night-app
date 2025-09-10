@@ -36,7 +36,7 @@ export default function LoginPage() {
       setError(error.message);
     } else {
       setMessage("Successfully signed in!");
-      router.push("/order");
+      router.push("/dashboard");
     }
     setLoading(false);
   };

@@ -4,35 +4,24 @@ import CopyIcon from "@/ui/icons/duplicateIcon";
 import { useState, useRef, useEffect } from "react";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useMenu } from "@/contexts/MenuContext";
+import Button from "@/ui/button";
+import { useActiveEvent } from "@/hooks/useActiveEvent";
+import { useAuth } from "@/contexts/AuthContext";
+import { addOrderUtil } from "@/util/orderUtil";
+import { useGuestName } from "@/hooks/useGuestName";
 
 interface OrderItemProps {
-  id: string;
-  initialItemName?: string;
-  initialSpiceLevel?: number;
-  initialIndianHot?: boolean;
-  onDuplicate?: (id: string) => void;
-  onRemove?: (id: string) => void;
-  onItemChange?: (
-    id: string,
-    itemName: string,
-    spiceLevel: number,
-    indianHot: boolean
-  ) => void;
+  onOrderAdded?: () => Promise<void> | void;
 }
 
-const OrderItem = ({
-  id,
-  initialItemName = "",
-  initialSpiceLevel = 1,
-  initialIndianHot = false,
-  onDuplicate,
-  onRemove,
-  onItemChange,
-}: OrderItemProps) => {
-  const [itemName, setItemName] = useState(initialItemName);
-  const [spiceLevel, setSpiceLevel] = useState(initialSpiceLevel);
-  const [indianHot, setIndianHot] = useState(initialIndianHot);
+const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
+  const [itemName, setItemName] = useState("");
+  const [spiceLevel, setSpiceLevel] = useState(1);
+  const [indianHot, setIndianHot] = useState(false);
+  const { guestName } = useGuestName();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { activeEvent } = useActiveEvent();
+  const { user } = useAuth();
 
   const { menuItems, isLoading: menuLoading, error: menuError } = useMenu();
 
@@ -49,18 +38,6 @@ const OrderItem = ({
     items: menuItems,
     value: itemName,
   });
-
-  const handleDuplicate = () => {
-    if (onDuplicate) {
-      onDuplicate(id);
-    }
-  };
-
-  const handleRemove = () => {
-    if (onRemove) {
-      onRemove(id);
-    }
-  };
 
   const handleItemSelect = (selectedItem: any) => {
     setItemName(selectedItem.name);
@@ -85,15 +62,60 @@ const OrderItem = ({
     setTimeout(() => setShowSuggestions(false), 150);
   };
 
-  // Notify parent component when item data changes
-  useEffect(() => {
-    if (onItemChange) {
-      onItemChange(id, itemName, spiceLevel, indianHot);
+  const handleAddOrder = async () => {
+    const selectedMenuItem = menuItems.find(
+      (item) => item.name.toLowerCase() === itemName.toLowerCase()
+    );
+
+    if (!selectedMenuItem || !activeEvent) {
+      console.error("Missing menu item or active event");
+      return;
     }
-  }, [id, itemName, spiceLevel, indianHot]); // Removed onItemChange from dependencies
+    console.log("first");
+
+    // If no user is logged in, require guest name
+    if (!user && !guestName.trim()) {
+      console.error("Guest name is required when not logged in");
+      return;
+    }
+
+    try {
+      // Create user object for logged in user or guest
+      const orderUser = user || {
+        id: "guest",
+        email: guestName.trim(),
+        user_metadata: { full_name: guestName.trim() },
+      };
+
+      await addOrderUtil(
+        {
+          menu_item_id: selectedMenuItem.id,
+          event_id: activeEvent.id,
+          spice_level: spiceLevel,
+          is_indian_hot: indianHot,
+        },
+        {
+          user: orderUser,
+          eventId: activeEvent.id,
+        }
+      );
+
+      // Refresh the orders list
+      if (onOrderAdded) {
+        await onOrderAdded();
+      }
+
+      // Clear the form after successful addition
+      setItemName("");
+      setSpiceLevel(1);
+      setIndianHot(false);
+    } catch (error) {
+      console.error("Failed to add order:", error);
+    }
+  };
 
   return (
-    <div className="bg-slate-500 rounded-2xl p-3 mb-3 shadow-md relative">
+    <div className="bg-slate-500 rounded-2xl p-3 my-4 shadow-md relative">
       {/* Item Name Input - Top Left */}
       <div className="mb-3 relative">
         <input
@@ -120,7 +142,7 @@ const OrderItem = ({
               ? "cursor-not-allowed opacity-50"
               : "cursor-pointer hover:scale-110"
           }`}
-          onClick={isDisabled ? undefined : handleDuplicate}
+          onClick={() => console.log("duplicate")}
           title={isDisabled ? "Menu loading..." : "Duplicate this item"}
         >
           <CopyIcon height={14} width={14} />
@@ -175,7 +197,7 @@ const OrderItem = ({
           {spiceLevel}
         </span>
         <button
-          onClick={handleRemove}
+          onClick={() => console.log("remove")}
           className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Remove this item"
           disabled={isDisabled}
@@ -198,6 +220,19 @@ const OrderItem = ({
           </label>
         </div>
       )}
+
+      <Button
+        fullWidth={true}
+        onClick={handleAddOrder}
+        disabled={
+          !itemName ||
+          !activeEvent ||
+          (!user && !guestName.trim()) ||
+          isDisabled
+        }
+      >
+        Add To Order
+      </Button>
 
       <style jsx>{`
         .slider::-webkit-slider-thumb {

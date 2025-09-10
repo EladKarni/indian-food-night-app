@@ -1,30 +1,75 @@
+"use client";
+
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useActiveEvent } from "@/hooks/useActiveEvent";
+import { useGuestName } from "@/hooks/useGuestName";
 
-async function checkForEvents() {
-  if (!supabase) return false;
+export default function Home() {
+  const { activeEvent } = useActiveEvent();
+  const { user } = useAuth();
+  const { guestName, setGuestName, isValidGuestName } = useGuestName();
 
-  try {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .gte("event_date", "now()")
-      .limit(1);
-
-    if (error) {
-      console.error("Error checking for events:", error);
-      return false;
+  const eventRelatedBtn = () => {
+    if (!activeEvent) {
+      return (
+        <div className="space-x-4 flex flex-col items-center justify-center">
+          <span className="text-slate-700">No upcoming events</span>
+        </div>
+      );
     }
 
-    return data && data.length > 0;
-  } catch (error) {
-    console.error("Error checking for events:", error);
-    return false;
-  }
-}
+    return (
+      <div className="space-x-4 flex flex-col items-center justify-center space-y-4">
+        {!user && (
+          <div className="w-full">
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              className="input input-bordered w-full"
+            />
+          </div>
+        )}
+        <Link
+          href="/order"
+          className={`font-medium py-3 px-6 rounded-2xl transition-colors w-full text-center ${
+            user || isValidGuestName
+              ? "bg-orange-500 hover:bg-orange-600 text-white"
+              : "bg-gray-400 text-gray-600 cursor-not-allowed pointer-events-none"
+          }`}
+        >
+          Join Event
+        </Link>
+      </div>
+    );
+  };
 
-export default async function Home() {
-  const hasEvents = await checkForEvents();
+  const mainButtonIfNoUser = () => {
+    if (!user) {
+      return (
+        <div className="space-x-4 flex flex-col items-center justify-center">
+          <Link
+            href="/login"
+            className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-6 rounded-2xl transition-colors w-full text-center"
+          >
+            Login / Signup
+          </Link>
+        </div>
+      );
+    }
+    return (
+      <div className="space-x-4 flex flex-col items-center justify-center">
+        <Link
+          href="/dashboard"
+          className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-6 rounded-2xl transition-colors w-full text-center"
+        >
+          Dashboard
+        </Link>
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex flex-col items-center justify-center p-4">
@@ -32,24 +77,8 @@ export default async function Home() {
         <h1 className="text-8xl font-bold text-slate-800 tracking-wider">
           IFN
         </h1>
-
-        <div className="space-y-8">
-          <Link
-            href={hasEvents ? "/order" : "/login"}
-            className="inline-block bg-orange-400 hover:bg-orange-500 text-white font-semibold py-4 px-12 rounded-full text-lg transition-colors duration-200 shadow-lg"
-          >
-            {hasEvents ? "Get started" : "Login to Host"}
-          </Link>
-
-          <div>
-            <Link
-              href="/login"
-              className="text-slate-700 hover:text-slate-900 font-medium text-lg transition-colors duration-200"
-            >
-              Host? Log in
-            </Link>
-          </div>
-        </div>
+        <div className="space-y-8">{mainButtonIfNoUser()}</div>
+        <div className="space-y-8">{eventRelatedBtn()}</div>
       </div>
     </main>
   );
