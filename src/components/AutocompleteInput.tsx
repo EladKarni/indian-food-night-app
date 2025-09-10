@@ -5,24 +5,29 @@ interface AutocompleteInputProps {
   value: string;
   onChange: (value: string) => void;
   onItemSelect: (item: any) => void;
+  onEnterPressed?: () => void;
   items: any[];
   placeholder?: string;
   disabled?: boolean;
   isLoading?: boolean;
   error?: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 const AutocompleteInput = ({
   value,
   onChange,
   onItemSelect,
+  onEnterPressed,
   items,
   placeholder = "Start typing...",
   disabled = false,
   isLoading = false,
-  error
+  error,
+  inputRef: externalRef
 }: AutocompleteInputProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalRef = useRef<HTMLInputElement>(null);
+  const inputRef = externalRef || internalRef;
 
   const {
     filteredItems,
@@ -68,7 +73,19 @@ const AutocompleteInput = ({
         onChange={handleInputChange}
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
-        onKeyDown={(e) => handleKeyDown(e, onItemSelect)}
+        onKeyDown={(e) => {
+          // Handle autocomplete navigation first
+          const hadSuggestions = showSuggestions && filteredItems.length > 0;
+          const hadSelection = selectedIndex >= 0;
+          
+          handleKeyDown(e, onItemSelect);
+          
+          // If Enter was pressed and either no suggestions were shown or no item was selected
+          if (e.key === "Enter" && (!hadSuggestions || !hadSelection)) {
+            e.preventDefault();
+            onEnterPressed?.();
+          }
+        }}
         placeholder={displayPlaceholder}
         className="bg-white text-slate-800 text-sm font-medium px-3 py-1.5 pr-9 rounded-xl border-none outline-none w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
         disabled={disabled}

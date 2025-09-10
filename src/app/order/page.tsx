@@ -38,6 +38,12 @@ function OrderPageContent() {
     setLocalOrders(prev => prev.filter(order => order.id !== orderId));
   };
 
+  const handleOrderUpdated = (updatedOrder: OrderWithMenuItem) => {
+    setLocalOrders(prev => 
+      prev.map(order => order.id === updatedOrder.id ? updatedOrder : order)
+    );
+  };
+
   // Get current user's orders to check count
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
@@ -73,6 +79,7 @@ function OrderPageContent() {
               error={error}
               onOrderAdded={handleOrderAdded}
               onOrderRemoved={handleOrderRemoved}
+              onOrderUpdated={handleOrderUpdated}
             />
           </div>
 
