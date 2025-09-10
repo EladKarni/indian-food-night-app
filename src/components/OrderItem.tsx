@@ -9,6 +9,7 @@ import { addOrderUtil } from "@/util/orderUtil";
 import { useGuestName } from "@/hooks/useGuestName";
 import AutocompleteInput from "./AutocompleteInput";
 import SpiceSelector from "./SpiceSelector";
+import { shouldShowSpiceSelector } from "@/util/spiceUtil";
 
 interface OrderItemProps {
   onOrderAdded?: () => Promise<void> | void;
@@ -26,6 +27,11 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
 
   // Show loading state while menu is loading
   const isDisabled = menuLoading || !!menuError;
+
+  // Get the selected menu item for spice level logic
+  const selectedMenuItem = menuItems.find(
+    (item) => item.name.toLowerCase() === itemName.toLowerCase()
+  );
 
   const handleItemSelect = (selectedItem: any) => {
     setItemName(selectedItem.name);
@@ -104,6 +110,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         onSpiceLevelChange={setSpiceLevel}
         indianHot={indianHot}
         onIndianHotChange={setIndianHot}
+        shouldShow={shouldShowSpiceSelector(selectedMenuItem || null)}
       />
 
       <Button

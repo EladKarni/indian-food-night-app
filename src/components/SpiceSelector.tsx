@@ -5,14 +5,20 @@ interface SpiceSelectorProps {
   onSpiceLevelChange: (level: number) => void;
   indianHot: boolean;
   onIndianHotChange: (checked: boolean) => void;
+  shouldShow?: boolean;
 }
 
 const SpiceSelector = ({
   spiceLevel,
   onSpiceLevelChange,
   indianHot,
-  onIndianHotChange
+  onIndianHotChange,
+  shouldShow = true
 }: SpiceSelectorProps) => {
+  if (!shouldShow) {
+    return null;
+  }
+
   return (
     <div>
       {/* Slider and Controls Row */}
