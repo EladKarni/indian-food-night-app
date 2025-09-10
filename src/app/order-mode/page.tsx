@@ -7,6 +7,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PageContainer from "@/ui/PageContainer";
+import Card from "@/ui/Card";
+import LoadingSpinner from "@/ui/LoadingSpinner";
+import AlertMessage from "@/ui/AlertMessage";
 
 interface GroupedOrder {
   item_name: string;
@@ -91,33 +95,34 @@ function OrderModePageContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
+      <PageContainer variant="gradient">
+        <Card variant="auth" className="w-full max-w-lg">
           <div className="p-6 text-center">
-            <div className="loading loading-spinner loading-md mb-4"></div>
-            <p className="text-slate-700">Loading orders...</p>
+            <LoadingSpinner size="lg" text="Loading orders..." />
           </div>
-        </div>
-      </main>
+        </Card>
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-        <div className="w-full max-w-lg mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
+      <PageContainer variant="gradient">
+        <Card variant="auth" className="w-full max-w-lg">
           <div className="p-6 text-center">
-            <p className="text-red-600 mb-4">Error loading orders: {error}</p>
+            <AlertMessage type="error" className="mb-4">
+              Error loading orders: {error}
+            </AlertMessage>
             <Button onClick={() => router.push("/order-overview")}>Back to Overview</Button>
           </div>
-        </div>
-      </main>
+        </Card>
+      </PageContainer>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
+    <PageContainer variant="gradient">
+      <Card variant="auth" className="w-full max-w-lg">
         {/* Header */}
         <div className="bg-green-500 p-4 flex items-center relative">
           <h1 className="text-lg font-semibold text-white flex-1 text-center">
@@ -127,19 +132,15 @@ function OrderModePageContent() {
 
         <div className="p-6 space-y-4">
           {/* Instructions */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-green-800 text-sm font-medium">
-              📋 Ready to call in orders! Items are grouped by dish for easy ordering.
-            </p>
-          </div>
+          <AlertMessage type="success" className="mb-4">
+            📋 Ready to call in orders! Items are grouped by dish for easy ordering.
+          </AlertMessage>
 
           {/* Extra Rice Reminder */}
           {uniqueUsers > 2 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p className="text-yellow-800 text-sm font-medium">
-                🍚 Reminder: With {uniqueUsers} people ordering, consider asking for extra rice!
-              </p>
-            </div>
+            <AlertMessage type="warning" className="mb-4">
+              🍚 Reminder: With {uniqueUsers} people ordering, consider asking for extra rice!
+            </AlertMessage>
           )}
 
           {groupedOrders.length === 0 ? (
@@ -238,8 +239,8 @@ function OrderModePageContent() {
             </Button>
           </div>
         </div>
-      </div>
-    </main>
+      </Card>
+    </PageContainer>
   );
 }
 
@@ -248,14 +249,13 @@ export default function OrderModePage() {
     <ProtectedRoute>
       <Suspense
         fallback={
-          <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
+          <PageContainer variant="gradient">
+            <Card variant="auth" className="w-full max-w-lg">
               <div className="p-6 text-center">
-                <div className="loading loading-spinner loading-md mb-4"></div>
-                <p className="text-slate-700">Loading...</p>
+                <LoadingSpinner size="lg" text="Loading..." />
               </div>
-            </div>
-          </main>
+            </Card>
+          </PageContainer>
         }
       >
         <OrderModePageContent />

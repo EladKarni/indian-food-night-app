@@ -5,7 +5,7 @@ import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
-import { removeOrderUtil, duplicateOrderUtil } from "@/util/orderUtil";
+import { removeOrderUtil, addOrderSimpleUtil } from "@/util/orderUtil";
 
 interface OrderListItemProps {
   order: OrderWithMenuItem;
@@ -148,7 +148,8 @@ interface OrderListProps {
   orders?: OrderWithMenuItem[];
   loading?: boolean;
   error?: string | null;
-  reload?: () => void;
+  onOrderAdded?: (newOrder: OrderWithMenuItem) => void;
+  onOrderRemoved?: (orderId: string) => void;
 }
 
 export const OrderList = ({
@@ -158,7 +159,8 @@ export const OrderList = ({
   orders: propOrders,
   loading: propLoading,
   error: propError,
-  reload: propReload,
+  onOrderAdded,
+  onOrderRemoved,
 }: OrderListProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const { activeEvent } = useActiveEvent();
@@ -170,9 +172,7 @@ export const OrderList = ({
   const orders = propOrders ?? hookResult.orders;
   const loading = propLoading ?? hookResult.loading;
   const error = propError ?? hookResult.error;
-  const refetch = hookResult.refetch;
   const updateOrder = hookResult.updateOrder;
-  const reload = propReload ?? refetch;
 
   // Get current user name for filtering
   const currentUserName =
@@ -183,8 +183,17 @@ export const OrderList = ({
 
   const handleRemoveOrder = async (orderId: string) => {
     try {
-      await removeOrderUtil(orderId);
-      await reload();
+      if (propOrders && onOrderRemoved) {
+        // Optimistic update: immediately update parent's state
+        onOrderRemoved(orderId);
+        // Only remove from database if it's not a temporary ID
+        if (!orderId.startsWith('temp-')) {
+          await removeOrderUtil(orderId);
+        }
+      } else {
+        // When using internal state, let the hook handle both database and UI update
+        await hookResult.removeOrder(orderId);
+      }
     } catch (error) {
       console.error("Failed to remove order:", error);
     }
@@ -196,19 +205,37 @@ export const OrderList = ({
       return;
     }
 
-    // If no user is logged in, use guest name
-    const orderUser = user || {
-      id: "guest",
-      email: guestName || "Guest",
-      user_metadata: { full_name: guestName || "Guest" },
-    };
-
     try {
-      await duplicateOrderUtil(order, {
-        user: orderUser,
-        eventId: activeEvent.id,
-      });
-      await refetch();
+      // Create duplicate order data without ID and timestamps
+      const duplicateData = {
+        menu_item_id: order.menu_item_id,
+        event_id: order.event_id,
+        spice_level: order.spice_level,
+        is_indian_hot: order.is_indian_hot,
+        special_instructions: order.special_instructions,
+      };
+
+      const userName = user?.user_metadata?.full_name || user?.email || guestName;
+
+      if (propOrders && onOrderAdded) {
+        // Create optimistic order object for immediate UI update
+        const optimisticOrder: OrderWithMenuItem = {
+          id: `temp-${Date.now()}`, // Temporary ID
+          ...duplicateData,
+          user_name: userName || 'Guest',
+          created_at: new Date().toISOString(),
+          is_submitted: false,
+          menu_items: order.menu_items, // Copy menu item data
+        };
+        
+        // Optimistic update: immediately update parent's state
+        onOrderAdded(optimisticOrder);
+        // Then add to database in background
+        await addOrderSimpleUtil(duplicateData, userName);
+      } else {
+        // When using internal state, let the hook handle both database and UI update
+        await hookResult.addOrder(duplicateData, guestName);
+      }
     } catch (error) {
       console.error("Failed to duplicate order:", error);
     }

@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import IFNInfo from "@/components/IFNInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
-import { useOrders } from "@/hooks/useOrders";
+import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
@@ -13,12 +13,30 @@ import Button from "@/ui/button";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
-  const { orders, loading, error, refetch, updateOrder } = useOrders(
+  const { orders: hookOrders, loading, error, refetch, updateOrder } = useOrders(
     activeEvent?.id
   );
   const { user } = useAuth();
   const { guestName } = useGuestName();
   const [finalizing, setFinalizing] = useState(false);
+  const [localOrders, setLocalOrders] = useState<OrderWithMenuItem[]>([]);
+
+  // Use local orders if available, otherwise use hook orders
+  const orders = localOrders.length > 0 ? localOrders : hookOrders;
+
+  // Update local orders when hook orders change
+  useEffect(() => {
+    setLocalOrders(hookOrders);
+  }, [hookOrders]);
+
+  // Optimistic update functions
+  const handleOrderAdded = (newOrder: OrderWithMenuItem) => {
+    setLocalOrders(prev => [newOrder, ...prev]);
+  };
+
+  const handleOrderRemoved = (orderId: string) => {
+    setLocalOrders(prev => prev.filter(order => order.id !== orderId));
+  };
 
   // Get current user's orders to check count
   const currentUserName =
@@ -53,7 +71,8 @@ function OrderPageContent() {
               orders={orders}
               loading={loading}
               error={error}
-              reload={refetch}
+              onOrderAdded={handleOrderAdded}
+              onOrderRemoved={handleOrderRemoved}
             />
           </div>
 
