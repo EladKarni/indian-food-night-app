@@ -208,6 +208,9 @@ const OrderListItem = ({
         )}
       </div>
       <div className="flex items-center space-x-2">
+        {order.is_submitted && (
+          <span className="text-xs text-green-600">✓ Ordered</span>
+        )}
         <div
           className={`text-xs ${
             isGrayedOut ? "text-slate-400" : "text-slate-500"

@@ -51,6 +51,9 @@ function OrderPageContent() {
     (order) => order.user_name === currentUserName
   );
   const hasMultipleOrders = userOrders.length > 1;
+  
+  // Check if all user orders are already submitted
+  const allOrdersSubmitted = userOrders.length > 0 && userOrders.every(order => order.is_submitted);
 
   return (
     <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
@@ -92,24 +95,29 @@ function OrderPageContent() {
                 className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={finalizing}
                 onClick={async () => {
-                  setFinalizing(true);
-                  try {
-                    // Mark all user's orders as submitted
-                    const updatePromises = userOrders.map((order) =>
-                      updateOrder(order.id, { is_submitted: true })
-                    );
-                    await Promise.all(updatePromises);
-
-                    // Navigate to overview page
+                  if (allOrdersSubmitted) {
+                    // If all orders are already submitted, just navigate to overview
                     window.location.href = "/order-overview";
-                  } catch (error) {
-                    console.error("Failed to finalize orders:", error);
-                    alert("Failed to finalize orders. Please try again.");
-                    setFinalizing(false);
+                  } else {
+                    setFinalizing(true);
+                    try {
+                      // Mark all user's orders as submitted
+                      const updatePromises = userOrders.map((order) =>
+                        updateOrder(order.id, { is_submitted: true })
+                      );
+                      await Promise.all(updatePromises);
+
+                      // Navigate to overview page
+                      window.location.href = "/order-overview";
+                    } catch (error) {
+                      console.error("Failed to finalize orders:", error);
+                      alert("Failed to finalize orders. Please try again.");
+                      setFinalizing(false);
+                    }
                   }
                 }}
               >
-                {finalizing ? "Finalizing..." : "Finalize Order"}
+                {finalizing ? "Finalizing..." : allOrdersSubmitted ? "Order Overview" : "Finalize Order"}
               </Button>
             </div>
           )}
