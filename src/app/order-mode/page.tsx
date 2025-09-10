@@ -133,26 +133,33 @@ function OrderModePageContent() {
         <div className="p-6 space-y-4">
           {/* Instructions */}
           <AlertMessage type="success" className="mb-4">
-            📋 Ready to call in orders! Items are grouped by dish for easy ordering.
+            📋 Ready to call in orders! Items are grouped by dish for easy
+            ordering.
           </AlertMessage>
 
           {/* Extra Rice Reminder */}
           {uniqueUsers > 2 && (
             <AlertMessage type="warning" className="mb-4">
-              🍚 Reminder: With {uniqueUsers} people ordering, consider asking for extra rice!
+              🍚 Reminder: With {uniqueUsers} people ordering, consider asking
+              for extra rice!
             </AlertMessage>
           )}
 
           {groupedOrders.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-600 text-sm">No orders found for this event.</p>
+              <p className="text-slate-600 text-sm">
+                No orders found for this event.
+              </p>
             </div>
           ) : (
             <>
               {/* Grouped Orders */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 overflow-y-auto">
                 {groupedOrders.map((group) => (
-                  <div key={group.item_name} className="bg-white rounded-2xl p-4 shadow-md">
+                  <div
+                    key={group.item_name}
+                    className="bg-white rounded-2xl p-4 shadow-md"
+                  >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-slate-800 text-sm flex-1">
                         {group.item_name}
@@ -166,19 +173,25 @@ function OrderModePageContent() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Spice Level Breakdown */}
                     <div className="text-xs text-slate-600 space-y-1">
                       {Object.entries(group.spice_levels)
                         .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                        .filter(([spiceLevel]) => !(spiceLevel === "10" && group.indian_hot_count > 0))
+                        .filter(
+                          ([spiceLevel]) =>
+                            !(spiceLevel === "10" && group.indian_hot_count > 0)
+                        )
                         .map(([spiceLevel, count]) => (
-                          <div key={spiceLevel} className="flex justify-between">
+                          <div
+                            key={spiceLevel}
+                            className="flex justify-between"
+                          >
                             <span>Spice Level {spiceLevel}:</span>
                             <span className="font-medium">{count}x</span>
                           </div>
                         ))}
-                      
+
                       {/* Indian Hot - show instead of spice level 10 */}
                       {group.indian_hot_count > 0 && (
                         <div className="flex justify-between text-red-600 font-medium">
@@ -186,14 +199,19 @@ function OrderModePageContent() {
                           <span>{group.indian_hot_count}x</span>
                         </div>
                       )}
-                      
+
                       {/* Show remaining spice level 10 items that are NOT indian hot */}
-                      {group.spice_levels["10"] && group.spice_levels["10"] > group.indian_hot_count && (
-                        <div className="flex justify-between">
-                          <span>Spice Level 10:</span>
-                          <span className="font-medium">{group.spice_levels["10"] - group.indian_hot_count}x</span>
-                        </div>
-                      )}
+                      {group.spice_levels["10"] &&
+                        group.spice_levels["10"] > group.indian_hot_count && (
+                          <div className="flex justify-between">
+                            <span>Spice Level 10:</span>
+                            <span className="font-medium">
+                              {group.spice_levels["10"] -
+                                group.indian_hot_count}
+                              x
+                            </span>
+                          </div>
+                        )}
                     </div>
                   </div>
                 ))}
@@ -207,8 +225,12 @@ function OrderModePageContent() {
                       Total Items: {submittedOrders.length}
                     </span>
                     <div className="text-right">
-                      <div className="text-slate-700">Subtotal: ${grandTotal.toFixed(2)}</div>
-                      <div className="text-slate-700">Tax (7%): ${(grandTotal * 0.07).toFixed(2)}</div>
+                      <div className="text-slate-700">
+                        Subtotal: ${grandTotal.toFixed(2)}
+                      </div>
+                      <div className="text-slate-700">
+                        Tax (7%): ${(grandTotal * 0.07).toFixed(2)}
+                      </div>
                       <div className="text-slate-800 font-bold text-xl">
                         Total: ${(grandTotal * 1.07).toFixed(2)}
                       </div>
