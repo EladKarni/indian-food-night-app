@@ -57,21 +57,25 @@ const OrderListItem = ({
         <div className="text-xs text-slate-500">
           ${order.menu_items.price.toFixed(2)}
         </div>
-        <button
-          onClick={handleDuplicate}
-          className="w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors"
-          title="Duplicate this order"
-        >
-          ⧉
-        </button>
-        {isCurrentUserOrder && (
-          <button
-            onClick={handleRemove}
-            className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors"
-            title="Remove this order"
-          >
-            −
-          </button>
+        {!isOverviewPage && (
+          <>
+            <button
+              onClick={handleDuplicate}
+              className="w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors"
+              title="Duplicate this order"
+            >
+              ⧉
+            </button>
+            {isCurrentUserOrder && (
+              <button
+                onClick={handleRemove}
+                className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors"
+                title="Remove this order"
+              >
+                −
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

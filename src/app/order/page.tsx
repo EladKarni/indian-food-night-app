@@ -49,20 +49,18 @@ function OrderPageContent() {
             <OrderList orders={orders} loading={loading} error={error} />
           </div>
 
-          {/* Submit Order Button - Show when user has orders */}
+          {/* Order Overview Button - Show when user has orders */}
           {userOrders.length > 0 && (
             <div className="pt-4 border-t border-slate-400/20 space-y-3">
               <Button
                 fullWidth={true}
                 variant="primary"
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
-                  // For now, navigate to overview page
-                  // In the future, this could handle order submission
                   window.location.href = "/order-overview";
                 }}
               >
-                Submit Order
+                View Order Overview
               </Button>
 
               {/* Overview Button - Only show if user has more than one order

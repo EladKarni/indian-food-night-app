@@ -2,11 +2,13 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
+import { useOrders } from "@/hooks/useOrders";
 import Link from "next/link";
 
 export default function DashboardContent() {
   const { user } = useAuth();
   const { activeEvent } = useActiveEvent();
+  const { orders } = useOrders(activeEvent?.id);
 
   const eventStatusButton = () => {
     if (activeEvent) {
@@ -27,6 +29,21 @@ export default function DashboardContent() {
         📅 Host Event
       </Link>
     );
+  };
+
+  const overviewButton = () => {
+    // Show overview button only if there's an active event and it has more than one order
+    if (activeEvent && orders.length > 1) {
+      return (
+        <Link
+          href="/order-overview"
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
+        >
+          📋 View Order Overview
+        </Link>
+      );
+    }
+    return null;
   };
 
   if (!user) return null;
@@ -53,6 +70,7 @@ export default function DashboardContent() {
                 {/* Action Buttons */}
                 <div className="space-y-3 mb-6 flex flex-col items-center">
                   {eventStatusButton()}
+                  {overviewButton()}
                   <Link
                     href="/profile/edit"
                     className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"

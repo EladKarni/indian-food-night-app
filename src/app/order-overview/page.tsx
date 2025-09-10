@@ -48,6 +48,14 @@ function OrderOverviewPageContent() {
             <Button
               fullWidth={true}
               variant="primary"
+              onClick={() => router.push("/order")}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              Back to Order Page
+            </Button>
+            <Button
+              fullWidth={true}
+              variant="secondary"
               onClick={() => router.push("/dashboard")}
               className="bg-orange-500 hover:bg-orange-600"
             >
