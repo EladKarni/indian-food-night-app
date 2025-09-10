@@ -26,11 +26,16 @@ function OrderModePageContent() {
   // Check if current user is the host
   const isHost = user && activeEvent && activeEvent.host_id === user.id;
 
+  // Filter orders to only include submitted ones
+  const submittedOrders = useMemo(() => {
+    return orders.filter(order => order.is_submitted);
+  }, [orders]);
+
   // Group orders by menu item
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: GroupedOrder } = {};
 
-    orders.forEach((order: OrderWithMenuItem) => {
+    submittedOrders.forEach((order: OrderWithMenuItem) => {
       const itemName = order.menu_items.name;
       const spiceLevel = order.spice_level?.toString() || "0";
       
@@ -59,7 +64,7 @@ function OrderModePageContent() {
     });
 
     return Object.values(groups).sort((a, b) => a.item_name.localeCompare(b.item_name));
-  }, [orders]);
+  }, [submittedOrders]);
 
   // Calculate grand total
   const grandTotal = useMemo(() => {
@@ -68,9 +73,9 @@ function OrderModePageContent() {
 
   // Get unique user count for extra rice reminder
   const uniqueUsers = useMemo(() => {
-    const userNames = new Set(orders.map(order => order.user_name));
+    const userNames = new Set(submittedOrders.map(order => order.user_name));
     return userNames.size;
-  }, [orders]);
+  }, [submittedOrders]);
 
   // Redirect non-hosts using useEffect
   useEffect(() => {
@@ -198,7 +203,7 @@ function OrderModePageContent() {
                 <div className="bg-white rounded-2xl p-4 shadow-md">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-800 font-bold text-lg">
-                      Total Items: {orders.length}
+                      Total Items: {submittedOrders.length}
                     </span>
                     <div className="text-right">
                       <div className="text-slate-700">Subtotal: ${grandTotal.toFixed(2)}</div>

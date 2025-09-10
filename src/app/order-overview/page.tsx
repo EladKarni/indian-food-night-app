@@ -40,7 +40,7 @@ function OrderOverviewPageContent() {
 
           {/* Order List */}
           <div className="mb-8">
-            <OrderList showAllOrders={isHost || false} isOverviewPage={true} />
+            <OrderList showAllOrders={isHost || false} isOverviewPage={true} isHostView={isHost || false} />
           </div>
 
           {/* Action Buttons */}
