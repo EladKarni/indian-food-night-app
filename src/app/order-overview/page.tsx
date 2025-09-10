@@ -7,6 +7,7 @@ import UserInfo from "@/components/IFNInfo";
 import OrderList from "@/components/OrderList";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
+import Link from "next/link";
 
 function OrderOverviewPageContent() {
   const router = useRouter();
@@ -31,10 +32,9 @@ function OrderOverviewPageContent() {
           <div className="mb-6">
             <UserInfo showProfilePicture={false} className="mb-4" />
             <p className="text-slate-600 text-sm italic">
-              {isHost 
+              {isHost
                 ? "Here's the overview of all orders for your event."
-                : "You're all set for IFN. Feel free to text the host if you have any questions."
-              }
+                : "You're all set for IFN. Feel free to text the host if you have any questions."}
             </p>
           </div>
 
@@ -45,6 +45,16 @@ function OrderOverviewPageContent() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* Order Mode Button - Only for hosts */}
+            {isHost && (
+              <Link
+                href="/order-mode"
+                className="flex bg-green-600 hover:bg-green-700 w-full text-center text-white btn font-medium rounded-2xl transition-colors duration-200 border-none focus:outline-none focus:ring-2 focus:ring-offset-2"
+              >
+                📞 Enter Order Mode
+              </Link>
+            )}
+
             <Button
               fullWidth={true}
               variant="primary"
