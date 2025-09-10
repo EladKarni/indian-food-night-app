@@ -9,6 +9,7 @@ import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { addOrderUtil } from "@/util/orderUtil";
 import { useGuestName } from "@/hooks/useGuestName";
+import { SPICY_STUFF_GUILLERMO } from "@/constants/spicyStuffGuillermo";
 
 interface OrderItemProps {
   onOrderAdded?: () => Promise<void> | void;
@@ -71,7 +72,6 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
       console.error("Missing menu item or active event");
       return;
     }
-    console.log("first");
 
     // If no user is logged in, require guest name
     if (!user && !guestName.trim()) {
@@ -145,7 +145,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
           onClick={() => console.log("duplicate")}
           title={isDisabled ? "Menu loading..." : "Duplicate this item"}
         >
-          <CopyIcon height={14} width={14} />
+          {/* <CopyIcon height={14} width={14} /> */}
         </div>
 
         {/* Autocomplete Dropdown */}
@@ -179,36 +179,29 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
       </div>
 
       {/* Slider and Controls Row */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 mb-2">
+        <span className="text-xs text-[#FF3B30] min-w-[50px]">Spice Level</span>
         <input
           type="range"
-          min="1"
+          min="0"
           max="10"
           value={spiceLevel}
           onChange={(e) => setSpiceLevel(parseInt(e.target.value))}
           className="flex-1 h-2 bg-slate-400 rounded-lg appearance-none cursor-pointer slider"
           style={{
-            background: `linear-gradient(to right, #f97316 0%, #f97316 ${
-              (spiceLevel - 1) * 11.11
-            }%, #94a3b8 ${(spiceLevel - 1) * 11.11}%, #94a3b8 100%)`,
+            background: `linear-gradient(to right, #FF3B30 0%, #FF3B30 ${
+              spiceLevel * 10
+            }%, #94a3b8 ${spiceLevel * 10}%, #94a3b8 100%)`,
           }}
         />
-        <span className="text-orange-400 font-bold text-xl min-w-[20px] text-center">
+        <span className="text-[#FF3B30] font-bold text-xl min-w-[20px] text-center">
           {spiceLevel}
         </span>
-        <button
-          onClick={() => console.log("remove")}
-          className="w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Remove this item"
-          disabled={isDisabled}
-        >
-          −
-        </button>
       </div>
 
       {/* Indian Hot Checkbox - Only show if spice level is 10 */}
       {spiceLevel === 10 && (
-        <div className="mt-2">
+        <div className="flex justify-between mt-2 mb-4">
           <label className="flex items-center space-x-2 text-xs text-white cursor-pointer">
             <input
               type="checkbox"
@@ -218,6 +211,15 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
             />
             <span>Indian Hot 🌶️</span>
           </label>
+          {indianHot && (
+            <div className="text-xs text-[#FF3B30] overflow-auto">
+              {
+                SPICY_STUFF_GUILLERMO[
+                  Math.floor(Math.random() * SPICY_STUFF_GUILLERMO.length)
+                ]
+              }
+            </div>
+          )}
         </div>
       )}
 
@@ -240,7 +242,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
           height: 20px;
           width: 20px;
           border-radius: 50%;
-          background: #f97316;
+          background: #ff3b30;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
@@ -248,7 +250,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
           height: 20px;
           width: 20px;
           border-radius: 50%;
-          background: #f97316;
+          background: #ff3b30;
           cursor: pointer;
           border: none;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);

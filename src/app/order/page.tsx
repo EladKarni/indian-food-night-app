@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import IFNInfo from "@/components/UserInfo";
+import IFNInfo from "@/components/IFNInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
 import { useOrders } from "@/hooks/useOrders";
@@ -13,13 +13,16 @@ import Button from "@/ui/button";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
-  const { orders, refetch } = useOrders(activeEvent?.id);
+  const { orders, loading, error, refetch } = useOrders(activeEvent?.id);
   const { user } = useAuth();
   const { guestName } = useGuestName();
 
   // Get current user's orders to check count
-  const currentUserName = user?.user_metadata?.full_name || user?.email || guestName;
-  const userOrders = orders.filter(order => order.user_name === currentUserName);
+  const currentUserName =
+    user?.user_metadata?.full_name || user?.email || guestName;
+  const userOrders = orders.filter(
+    (order) => order.user_name === currentUserName
+  );
   const hasMultipleOrders = userOrders.length > 1;
 
   return (
@@ -43,7 +46,7 @@ function OrderPageContent() {
 
           {/* Order List */}
           <div>
-            <OrderList />
+            <OrderList orders={orders} loading={loading} error={error} />
           </div>
 
           {/* Submit Order Button - Show when user has orders */}
@@ -61,8 +64,8 @@ function OrderPageContent() {
               >
                 Submit Order
               </Button>
-              
-              {/* Overview Button - Only show if user has more than one order */}
+
+              {/* Overview Button - Only show if user has more than one order
               {hasMultipleOrders && (
                 <Link href="/order-overview">
                   <Button
@@ -73,7 +76,7 @@ function OrderPageContent() {
                     View Order Overview
                   </Button>
                 </Link>
-              )}
+              )} */}
             </div>
           )}
         </div>

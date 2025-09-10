@@ -59,20 +59,25 @@ export const useOrders = (eventId?: string) => {
   }, [fetchOrders]);
 
   const addOrder = useCallback(
-    async (orderData: CreateOrderData) => {
-      if (!supabase || !user) {
-        throw new Error("Authentication required");
+    async (orderData: CreateOrderData, guestName?: string) => {
+      if (!supabase) {
+        throw new Error("Supabase client not available");
       }
 
-      console.log("first");
+      // If no user is logged in, require guest name
+      if (!user && !guestName?.trim()) {
+        throw new Error("Guest name is required when not logged in");
+      }
 
       setActionLoading(true);
       try {
+        const userName = user?.user_metadata?.full_name || user?.email || guestName;
+        
         const { data, error } = await supabase
           .from("orders")
           .insert({
             ...orderData,
-            user_name: user.user_metadata?.full_name || user.email,
+            user_name: userName,
           })
           .select(
             `

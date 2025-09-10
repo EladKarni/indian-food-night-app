@@ -54,9 +54,6 @@ const OrderListItem = ({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        <span className="text-orange-400 font-bold text-xl">
-          {order.spice_level}
-        </span>
         <div className="text-xs text-slate-500">
           ${order.menu_items.price.toFixed(2)}
         </div>
@@ -84,13 +81,28 @@ const OrderListItem = ({
 interface OrderListProps {
   showAllOrders?: boolean;
   isOverviewPage?: boolean;
+  orders?: OrderWithMenuItem[];
+  loading?: boolean;
+  error?: string | null;
 }
 
-export const OrderList = ({ showAllOrders = false, isOverviewPage = false }: OrderListProps) => {
+export const OrderList = ({ 
+  showAllOrders = false, 
+  isOverviewPage = false,
+  orders: propOrders,
+  loading: propLoading,
+  error: propError
+}: OrderListProps) => {
   const { activeEvent } = useActiveEvent();
-  const { orders, loading, error, refetch } = useOrders(activeEvent?.id);
+  const hookResult = useOrders(activeEvent?.id);
   const { user } = useAuth();
   const { guestName } = useGuestName();
+
+  // Use props if provided, otherwise use hook
+  const orders = propOrders ?? hookResult.orders;
+  const loading = propLoading ?? hookResult.loading;
+  const error = propError ?? hookResult.error;
+  const refetch = hookResult.refetch;
 
   // Get current user name for filtering
   const currentUserName =
@@ -227,13 +239,32 @@ export const OrderList = ({ showAllOrders = false, isOverviewPage = false }: Ord
 
       {/* Show total only on overview page when there are orders */}
       {isOverviewPage && filteredOrders.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-300">
+        <div className="mt-4 pt-4 border-t border-slate-300 space-y-2">
+          {/* Subtotal */}
           <div className="flex justify-between items-center">
-            <span className="text-slate-800 font-semibold">
-              {shouldShowAllOrders ? "Group Total:" : "Your Total:"}
+            <span className="text-slate-700">
+              {shouldShowAllOrders ? "Group Subtotal:" : "Subtotal:"}
+            </span>
+            <span className="text-slate-700">
+              ${total.toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Tax (7%) */}
+          <div className="flex justify-between items-center">
+            <span className="text-slate-700">Tax (7%):</span>
+            <span className="text-slate-700">
+              ${(total * 0.07).toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Total with tax */}
+          <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+            <span className="text-slate-800 font-bold text-lg">
+              {shouldShowAllOrders ? "Group Total:" : "Total:"}
             </span>
             <span className="text-slate-800 font-bold text-lg">
-              ${total.toFixed(2)}
+              ${(total * 1.07).toFixed(2)}
             </span>
           </div>
         </div>

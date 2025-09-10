@@ -1,8 +1,7 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
-import { useGuestName } from "@/hooks/useGuestName";
+import { useHostProfile } from "@/hooks/useHostProfile";
 
 interface UserInfoProps {
   showProfilePicture?: boolean;
@@ -10,11 +9,9 @@ interface UserInfoProps {
 }
 
 export default function IFNInfo({ showProfilePicture = true }: UserInfoProps) {
-  const { user } = useAuth();
   const { activeEvent } = useActiveEvent();
-  const { guestName } = useGuestName();
+  const { hostProfile, loading } = useHostProfile(activeEvent?.host_id);
 
-  console.log(guestName);
   if (!activeEvent) {
     return null;
   }
@@ -27,17 +24,17 @@ export default function IFNInfo({ showProfilePicture = true }: UserInfoProps) {
             <span className="text-white text-xs">👤</span>
           </div>
           <span className="font-semibold text-slate-800 text-sm">
-            {user?.user_metadata?.full_name ||
-              user?.email ||
-              guestName ||
-              "Guest"}
+            {loading ? "Loading host..." : (hostProfile?.full_name || hostProfile?.email || "Host")}
           </span>
         </div>
         <div className="flex items-center text-xs text-slate-700">
           <div className="w-4 h-4 bg-blue-600 rounded-sm flex items-center justify-center mr-2">
             <span className="text-white text-xs">🏠</span>
           </div>
-          <span>{activeEvent?.location || "Address not provided"} @ 6:30</span>
+          <span>
+            {hostProfile?.address || activeEvent?.location || "Address not provided"}
+            {activeEvent?.start_time ? ` @ ${activeEvent.start_time}` : " @ 6:30"}
+          </span>
         </div>
       </div>
       {showProfilePicture && (
