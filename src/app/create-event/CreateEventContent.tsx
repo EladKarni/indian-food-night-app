@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getNextWednesday } from "@/util/dateUtils";
 import Link from "next/link";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function CreateEventContent() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,7 +52,7 @@ export default function CreateEventContent() {
         return;
       }
 
-      router.push("/order");
+      router.push("/dashboard");
     } catch (err) {
       console.error("Error creating event:", err);
     } finally {
