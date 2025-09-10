@@ -31,10 +31,12 @@ export const addOrderUtil = async (
       ...orderData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
     })
-    .select(`
+    .select(
+      `
       *,
       menu_items (*)
-    `)
+    `
+    )
     .single();
 
   if (error) {
@@ -51,11 +53,8 @@ export const removeOrderUtil = async (orderId: string): Promise<void> => {
   if (!supabase) {
     throw new Error("Supabase client not available");
   }
-
-  const { error } = await supabase
-    .from("orders")
-    .delete()
-    .eq("id", orderId);
+  console.log("TEST");
+  const { error } = await supabase.from("orders").delete().eq("id", orderId);
 
   if (error) {
     throw new Error(`Failed to remove order: ${error.message}`);
@@ -88,10 +87,12 @@ export const duplicateOrderUtil = async (
       ...duplicateData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
     })
-    .select(`
+    .select(
+      `
       *,
       menu_items (*)
-    `)
+    `
+    )
     .single();
 
   if (error) {
@@ -116,10 +117,12 @@ export const updateOrderUtil = async (
     .from("orders")
     .update(updates)
     .eq("id", orderId)
-    .select(`
+    .select(
+      `
       *,
       menu_items (*)
-    `)
+    `
+    )
     .single();
 
   if (error) {
@@ -141,10 +144,12 @@ export const getOrdersByEventUtil = async (
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`
+    .select(
+      `
       *,
       menu_items (*)
-    `)
+    `
+    )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -167,10 +172,12 @@ export const getOrdersByUserUtil = async (
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`
+    .select(
+      `
       *,
       menu_items (*)
-    `)
+    `
+    )
     .eq("user_name", userName)
     .order("created_at", { ascending: false });
 

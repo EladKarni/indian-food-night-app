@@ -13,7 +13,9 @@ import Button from "@/ui/button";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
-  const { orders, loading, error, refetch, updateOrder } = useOrders(activeEvent?.id);
+  const { orders, loading, error, refetch, updateOrder } = useOrders(
+    activeEvent?.id
+  );
   const { user } = useAuth();
   const { guestName } = useGuestName();
   const [finalizing, setFinalizing] = useState(false);
@@ -47,7 +49,12 @@ function OrderPageContent() {
 
           {/* Order List */}
           <div>
-            <OrderList orders={orders} loading={loading} error={error} />
+            <OrderList
+              orders={orders}
+              loading={loading}
+              error={error}
+              reload={refetch}
+            />
           </div>
 
           {/* Order Overview Button - Show when user has orders */}
@@ -62,11 +69,11 @@ function OrderPageContent() {
                   setFinalizing(true);
                   try {
                     // Mark all user's orders as submitted
-                    const updatePromises = userOrders.map(order => 
+                    const updatePromises = userOrders.map((order) =>
                       updateOrder(order.id, { is_submitted: true })
                     );
                     await Promise.all(updatePromises);
-                    
+
                     // Navigate to overview page
                     window.location.href = "/order-overview";
                   } catch (error) {
@@ -78,19 +85,6 @@ function OrderPageContent() {
               >
                 {finalizing ? "Finalizing..." : "Finalize Order"}
               </Button>
-
-              {/* Overview Button - Only show if user has more than one order
-              {hasMultipleOrders && (
-                <Link href="/order-overview">
-                  <Button
-                    fullWidth={true}
-                    variant="secondary"
-                    className="bg-slate-600 hover:bg-slate-700 text-white"
-                  >
-                    View Order Overview
-                  </Button>
-                </Link>
-              )} */}
             </div>
           )}
         </div>

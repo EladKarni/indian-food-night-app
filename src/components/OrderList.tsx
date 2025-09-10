@@ -28,7 +28,8 @@ const OrderListItem = ({
 }: OrderListItemProps) => {
   const { user } = useAuth();
   const { guestName } = useGuestName();
-  const currentUserName = user?.user_metadata?.full_name || user?.email || guestName;
+  const currentUserName =
+    user?.user_metadata?.full_name || user?.email || guestName;
   const isCurrentUserOrder = order.user_name === currentUserName;
 
   const handleRemove = () => {
@@ -49,29 +50,55 @@ const OrderListItem = ({
   const isGrayedOut = isHostView && !order.is_submitted;
 
   return (
-    <div className={`bg-white rounded-2xl p-3 mb-2 flex items-center justify-between ${isGrayedOut ? 'opacity-50' : ''}`}>
+    <div
+      className={`bg-white rounded-2xl p-3 mb-2 flex items-center justify-between ${
+        isGrayedOut ? "opacity-50" : ""
+      }`}
+    >
       <div className="flex-1">
-        <span className={`text-sm font-medium ${isGrayedOut ? 'text-slate-400' : 'text-slate-800'}`}>
+        <span
+          className={`text-sm font-medium ${
+            isGrayedOut ? "text-slate-400" : "text-slate-800"
+          }`}
+        >
           {order.menu_items.name}
-          {isGrayedOut && <span className="ml-2 text-xs text-slate-400">(Not Submitted)</span>}
+          {isGrayedOut && (
+            <span className="ml-2 text-xs text-slate-400">(Not Submitted)</span>
+          )}
         </span>
-        <div className={`text-xs mt-1 ${isGrayedOut ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div
+          className={`text-xs mt-1 ${
+            isGrayedOut ? "text-slate-400" : "text-slate-500"
+          }`}
+        >
           Spice Level: {order.spice_level}
           {order.is_indian_hot ? " (Indian Hot)" : ""}
           {isOverviewPage && (
-            <div className={`text-xs mt-1 ${isGrayedOut ? 'text-slate-400' : 'text-slate-600'}`}>
+            <div
+              className={`text-xs mt-1 ${
+                isGrayedOut ? "text-slate-400" : "text-slate-600"
+              }`}
+            >
               ${order.menu_items.price.toFixed(2)}
             </div>
           )}
         </div>
         {order.special_instructions && (
-          <div className={`text-xs mt-1 ${isGrayedOut ? 'text-slate-400' : 'text-slate-500'}`}>
+          <div
+            className={`text-xs mt-1 ${
+              isGrayedOut ? "text-slate-400" : "text-slate-500"
+            }`}
+          >
             Note: {order.special_instructions}
           </div>
         )}
       </div>
       <div className="flex items-center space-x-2">
-        <div className={`text-xs ${isGrayedOut ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div
+          className={`text-xs ${
+            isGrayedOut ? "text-slate-400" : "text-slate-500"
+          }`}
+        >
           ${order.menu_items.price.toFixed(2)}
         </div>
         {isEditMode && isHostView && (
@@ -79,12 +106,14 @@ const OrderListItem = ({
             onClick={handleToggleSubmitted}
             className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
               order.is_submitted
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-gray-300 hover:bg-gray-400 text-gray-700"
             }`}
-            title={order.is_submitted ? 'Mark as not submitted' : 'Mark as submitted'}
+            title={
+              order.is_submitted ? "Mark as not submitted" : "Mark as submitted"
+            }
           >
-            {order.is_submitted ? '✓ Submitted' : '✗ Not Submitted'}
+            {order.is_submitted ? "✓ Submitted" : "✗ Not Submitted"}
           </button>
         )}
         {!isOverviewPage && (
@@ -119,15 +148,17 @@ interface OrderListProps {
   orders?: OrderWithMenuItem[];
   loading?: boolean;
   error?: string | null;
+  reload?: () => void;
 }
 
-export const OrderList = ({ 
-  showAllOrders = false, 
+export const OrderList = ({
+  showAllOrders = false,
   isOverviewPage = false,
   isHostView = false,
   orders: propOrders,
   loading: propLoading,
-  error: propError
+  error: propError,
+  reload: propReload,
 }: OrderListProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const { activeEvent } = useActiveEvent();
@@ -141,6 +172,7 @@ export const OrderList = ({
   const error = propError ?? hookResult.error;
   const refetch = hookResult.refetch;
   const updateOrder = hookResult.updateOrder;
+  const reload = propReload ?? refetch;
 
   // Get current user name for filtering
   const currentUserName =
@@ -152,7 +184,7 @@ export const OrderList = ({
   const handleRemoveOrder = async (orderId: string) => {
     try {
       await removeOrderUtil(orderId);
-      await refetch();
+      await reload();
     } catch (error) {
       console.error("Failed to remove order:", error);
     }
@@ -182,7 +214,10 @@ export const OrderList = ({
     }
   };
 
-  const handleToggleSubmitted = async (orderId: string, isSubmitted: boolean) => {
+  const handleToggleSubmitted = async (
+    orderId: string,
+    isSubmitted: boolean
+  ) => {
     try {
       await updateOrder(orderId, { is_submitted: isSubmitted });
     } catch (error) {
@@ -233,10 +268,10 @@ export const OrderList = ({
 
   // Calculate totals for overview page
   // For hosts, exclude unsubmitted orders from calculation
-  const ordersForCalculation = isHostView 
-    ? filteredOrders.filter(order => order.is_submitted)
+  const ordersForCalculation = isHostView
+    ? filteredOrders.filter((order) => order.is_submitted)
     : filteredOrders;
-  
+
   const total = ordersForCalculation.reduce(
     (sum, order) => sum + order.menu_items.price,
     0
@@ -254,11 +289,11 @@ export const OrderList = ({
               onClick={() => setIsEditMode(!isEditMode)}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                 isEditMode
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  ? "bg-orange-500 hover:bg-orange-600 text-white"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
               }`}
             >
-              {isEditMode ? '✓ Done Editing' : '✏️ Edit Status'}
+              {isEditMode ? "✓ Done Editing" : "✏️ Edit Status"}
             </button>
           )}
         </div>
@@ -267,10 +302,10 @@ export const OrderList = ({
       {Object.entries(ordersByUser).map(([userName, userOrders]) => {
         const isCurrentUser = userName === currentUserName;
         // For hosts, calculate user total excluding unsubmitted orders
-        const userOrdersForCalculation = isHostView 
-          ? userOrders.filter(order => order.is_submitted)
+        const userOrdersForCalculation = isHostView
+          ? userOrders.filter((order) => order.is_submitted)
           : userOrders;
-        
+
         const userTotal = userOrdersForCalculation.reduce(
           (sum, order) => sum + order.menu_items.price,
           0
@@ -318,19 +353,15 @@ export const OrderList = ({
             <span className="text-slate-700">
               {shouldShowAllOrders ? "Group Subtotal:" : "Subtotal:"}
             </span>
-            <span className="text-slate-700">
-              ${total.toFixed(2)}
-            </span>
+            <span className="text-slate-700">${total.toFixed(2)}</span>
           </div>
-          
+
           {/* Tax (7%) */}
           <div className="flex justify-between items-center">
             <span className="text-slate-700">Tax (7%):</span>
-            <span className="text-slate-700">
-              ${(total * 0.07).toFixed(2)}
-            </span>
+            <span className="text-slate-700">${(total * 0.07).toFixed(2)}</span>
           </div>
-          
+
           {/* Total with tax */}
           <div className="flex justify-between items-center pt-2 border-t border-slate-200">
             <span className="text-slate-800 font-bold text-lg">

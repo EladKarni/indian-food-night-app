@@ -36,7 +36,7 @@ export const useActiveEvent = () => {
         if (error) {
           throw error;
         }
-        console.log(events);
+
         setActiveEvent(events?.[0] || null);
         setError(null);
       } catch (err) {
