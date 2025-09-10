@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import IFNInfo from "@/components/IFNInfo";
 import OrderItem from "@/components/OrderItem";
@@ -13,9 +13,10 @@ import Button from "@/ui/button";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
-  const { orders, loading, error, refetch } = useOrders(activeEvent?.id);
+  const { orders, loading, error, refetch, updateOrder } = useOrders(activeEvent?.id);
   const { user } = useAuth();
   const { guestName } = useGuestName();
+  const [finalizing, setFinalizing] = useState(false);
 
   // Get current user's orders to check count
   const currentUserName =
@@ -55,12 +56,27 @@ function OrderPageContent() {
               <Button
                 fullWidth={true}
                 variant="primary"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => {
-                  window.location.href = "/order-overview";
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={finalizing}
+                onClick={async () => {
+                  setFinalizing(true);
+                  try {
+                    // Mark all user's orders as submitted
+                    const updatePromises = userOrders.map(order => 
+                      updateOrder(order.id, { is_submitted: true })
+                    );
+                    await Promise.all(updatePromises);
+                    
+                    // Navigate to overview page
+                    window.location.href = "/order-overview";
+                  } catch (error) {
+                    console.error("Failed to finalize orders:", error);
+                    alert("Failed to finalize orders. Please try again.");
+                    setFinalizing(false);
+                  }
                 }}
               >
-                View Order Overview
+                {finalizing ? "Finalizing..." : "Finalize Order"}
               </Button>
 
               {/* Overview Button - Only show if user has more than one order

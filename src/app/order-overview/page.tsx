@@ -23,7 +23,7 @@ function OrderOverviewPageContent() {
         {/* Header */}
         <div className="bg-orange-400 p-4 flex items-center relative">
           <h1 className="text-lg font-semibold text-slate-700 flex-1 text-center">
-            {isHost ? "Event Overview" : "Your Order"}
+            {isHost ? "Event Overview" : "Order Completed"}
           </h1>
         </div>
 
