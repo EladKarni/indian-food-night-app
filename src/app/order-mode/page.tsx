@@ -70,10 +70,6 @@ function OrderModePageContent() {
     return Object.values(groups).sort((a, b) => a.item_name.localeCompare(b.item_name));
   }, [submittedOrders]);
 
-  // Calculate grand total
-  const grandTotal = useMemo(() => {
-    return groupedOrders.reduce((sum, group) => sum + group.total_cost, 0);
-  }, [groupedOrders]);
 
   // Get unique user count for extra rice reminder
   const uniqueUsers = useMemo(() => {
@@ -168,9 +164,6 @@ function OrderModePageContent() {
                         <div className="text-lg font-bold text-green-600">
                           {group.total_quantity}x
                         </div>
-                        <div className="text-xs text-slate-500">
-                          ${group.total_cost.toFixed(2)}
-                        </div>
                       </div>
                     </div>
 
@@ -217,24 +210,13 @@ function OrderModePageContent() {
                 ))}
               </div>
 
-              {/* Grand Total */}
+              {/* Order Summary */}
               <div className="mt-6 pt-4 border-t border-slate-300">
                 <div className="bg-white rounded-2xl p-4 shadow-md">
-                  <div className="flex justify-between items-center">
+                  <div className="text-center">
                     <span className="text-slate-800 font-bold text-lg">
                       Total Items: {submittedOrders.length}
                     </span>
-                    <div className="text-right">
-                      <div className="text-slate-700">
-                        Subtotal: ${grandTotal.toFixed(2)}
-                      </div>
-                      <div className="text-slate-700">
-                        Tax (7%): ${(grandTotal * 0.07).toFixed(2)}
-                      </div>
-                      <div className="text-slate-800 font-bold text-xl">
-                        Total: ${(grandTotal * 1.07).toFixed(2)}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
