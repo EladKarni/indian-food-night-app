@@ -1,7 +1,6 @@
 "use client";
 
-import CopyIcon from "@/ui/icons/duplicateIcon";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useMenu } from "@/contexts/MenuContext";
 import Button from "@/ui/button";
