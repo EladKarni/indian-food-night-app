@@ -21,6 +21,10 @@ export const useHostProfile = (hostId?: string) => {
       setError(null);
 
       try {
+        if (!supabase) {
+          throw new Error("Supabase client not available");
+        }
+
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
