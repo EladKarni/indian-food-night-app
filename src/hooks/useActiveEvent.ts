@@ -29,9 +29,13 @@ export const useActiveEvent = () => {
       }
 
       try {
+
         const { data: events, error } = await supabase
           .from("events")
-          .select("*");
+          .select("*")
+          .gte("event_date", new Date().toISOString().split("T")[0])
+          .limit(1);
+
 
         if (error) {
           throw error;
