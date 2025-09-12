@@ -17,7 +17,6 @@ export const useActiveEvent = () => {
     }
 
     try {
-
       const { data: events, error } = await supabase
         .from("events")
         .select("*")
