@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useMenu } from "@/contexts/MenuContext";
 import Button from "@/ui/button";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { addOrderUtil } from "@/util/orderUtil";
 import { useGuestName } from "@/hooks/useGuestName";
-import { SPICY_STUFF_GUILLERMO } from "@/constants/spicyStuffGuillermo";
+import AutocompleteInput from "./AutocompleteInput";
+import SpiceSelector from "./SpiceSelector";
+import { shouldShowSpiceSelector } from "@/util/spiceUtil";
 
 interface OrderItemProps {
   onOrderAdded?: () => Promise<void> | void;
@@ -18,48 +19,39 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
   const [itemName, setItemName] = useState("");
   const [spiceLevel, setSpiceLevel] = useState(1);
   const [indianHot, setIndianHot] = useState(false);
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const { guestName } = useGuestName();
-  const inputRef = useRef<HTMLInputElement>(null);
   const { activeEvent } = useActiveEvent();
   const { user } = useAuth();
+  const autocompleteRef = useRef<HTMLInputElement>(null);
 
   const { menuItems, isLoading: menuLoading, error: menuError } = useMenu();
 
   // Show loading state while menu is loading
   const isDisabled = menuLoading || !!menuError;
-  const {
-    filteredItems,
-    showSuggestions,
-    setShowSuggestions,
-    selectedIndex,
-    handleKeyDown,
-    selectItem,
-  } = useAutocomplete({
-    items: menuItems,
-    value: itemName,
-  });
+
+  // Get the selected menu item for spice level logic
+  const selectedMenuItem = menuItems.find(
+    (item) => item.name.toLowerCase() === itemName.toLowerCase()
+  );
 
   const handleItemSelect = (selectedItem: any) => {
     setItemName(selectedItem.name);
-    setSpiceLevel(selectedItem.spiceLevel);
-    setShowSuggestions(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setItemName(value);
-    setShowSuggestions(value.trim().length > 0);
-  };
-
-  const handleInputFocus = () => {
-    if (itemName.trim().length > 0) {
-      setShowSuggestions(true);
+    
+    // Set spice level to 0 for items that don't need spice levels
+    if (!shouldShowSpiceSelector(selectedItem)) {
+      setSpiceLevel(0);
+      setIndianHot(false);
+    } else {
+      setSpiceLevel(selectedItem.spiceLevel);
     }
   };
 
-  const handleInputBlur = () => {
-    // Delay hiding suggestions to allow clicking on them
-    setTimeout(() => setShowSuggestions(false), 150);
+  const handleEnterPressed = async () => {
+    // Only add if there's a valid item name
+    if (itemName.trim()) {
+      await handleAddOrder();
+    }
   };
 
   const handleAddOrder = async () => {
@@ -86,12 +78,17 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         user_metadata: { full_name: guestName.trim() },
       };
 
+      // Use spice level 0 for items that don't need spice levels
+      const finalSpiceLevel = shouldShowSpiceSelector(selectedMenuItem) ? spiceLevel : 0;
+      const finalIndianHot = shouldShowSpiceSelector(selectedMenuItem) ? indianHot : false;
+
       await addOrderUtil(
         {
           menu_item_id: selectedMenuItem.id,
           event_id: activeEvent.id,
-          spice_level: spiceLevel,
-          is_indian_hot: indianHot,
+          spice_level: finalSpiceLevel,
+          is_indian_hot: finalIndianHot,
+          special_instructions: specialInstructions.trim() || null,
         },
         {
           user: orderUser,
@@ -108,6 +105,12 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
       setItemName("");
       setSpiceLevel(1);
       setIndianHot(false);
+      setSpecialInstructions("");
+      
+      // Refocus the input for quick successive entries
+      setTimeout(() => {
+        autocompleteRef.current?.focus();
+      }, 100);
     } catch (error) {
       console.error("Failed to add order:", error);
     }
@@ -116,107 +119,43 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
   return (
     <div className="bg-slate-500 rounded-2xl p-3 my-4 shadow-md relative">
       {/* Item Name Input - Top Left */}
-      <div className="mb-3 relative">
-        <input
-          ref={inputRef}
-          type="text"
+      <div className="mb-3">
+        <AutocompleteInput
+          inputRef={autocompleteRef}
           value={itemName}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          onKeyDown={(e) => handleKeyDown(e, handleItemSelect)}
-          placeholder={
-            menuLoading
-              ? "Loading menu..."
-              : menuError
-              ? "Error loading menu"
-              : "Start typing a dish name..."
-          }
-          className="bg-white text-slate-800 text-sm font-medium px-3 py-1.5 pr-9 rounded-xl border-none outline-none w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+          onChange={setItemName}
+          onItemSelect={handleItemSelect}
+          onEnterPressed={handleEnterPressed}
+          items={menuItems}
+          placeholder="Start typing a dish name..."
           disabled={isDisabled}
+          isLoading={menuLoading}
+          error={menuError || undefined}
         />
-        <div
-          className={`absolute right-2 top-1/2 transform -translate-y-1/2 transition-transform ${
-            isDisabled
-              ? "cursor-not-allowed opacity-50"
-              : "cursor-pointer hover:scale-110"
-          }`}
-          onClick={() => console.log("duplicate")}
-          title={isDisabled ? "Menu loading..." : "Duplicate this item"}
-        >
-          {/* <CopyIcon height={14} width={14} /> */}
-        </div>
-
-        {/* Autocomplete Dropdown */}
-        {!isDisabled && showSuggestions && filteredItems.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-            {filteredItems.map((item, index) => (
-              <div
-                key={item.id}
-                className={`px-3 py-2 cursor-pointer text-sm ${
-                  index === selectedIndex
-                    ? "bg-orange-100 text-orange-800"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-                onClick={() => selectItem(item, handleItemSelect)}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-xs text-slate-500">${item.price}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Show error message if menu failed to load */}
-        {menuError && (
-          <div className="absolute z-10 w-full mt-1 bg-red-50 border border-red-200 rounded-lg p-2">
-            <div className="text-xs text-red-600">{menuError}</div>
-          </div>
-        )}
       </div>
 
-      {/* Slider and Controls Row */}
-      <div className="flex items-center space-x-2 mb-2">
-        <span className="text-xs text-[#FF3B30] min-w-[50px]">Spice Level</span>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          value={spiceLevel}
-          onChange={(e) => setSpiceLevel(parseInt(e.target.value))}
-          className="flex-1 h-2 bg-slate-400 rounded-lg appearance-none cursor-pointer slider"
-          style={{
-            background: `linear-gradient(to right, #FF3B30 0%, #FF3B30 ${
-              spiceLevel * 10
-            }%, #94a3b8 ${spiceLevel * 10}%, #94a3b8 100%)`,
-          }}
-        />
-        <span className="text-[#FF3B30] font-bold text-xl min-w-[20px] text-center">
-          {spiceLevel}
-        </span>
-      </div>
+      <SpiceSelector
+        spiceLevel={spiceLevel}
+        onSpiceLevelChange={setSpiceLevel}
+        indianHot={indianHot}
+        onIndianHotChange={setIndianHot}
+        shouldShow={shouldShowSpiceSelector(selectedMenuItem || null)}
+      />
 
-      {/* Indian Hot Checkbox - Only show if spice level is 10 */}
-      {spiceLevel === 10 && (
-        <div className="flex justify-between mt-2 mb-4">
-          <label className="flex items-center space-x-2 text-xs text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={indianHot}
-              onChange={(e) => setIndianHot(e.target.checked)}
-              className="form-checkbox h-3 w-3 text-orange-500 rounded focus:ring-orange-400 focus:ring-offset-0"
-            />
-            <span>Indian Hot 🌶️</span>
-          </label>
-          {indianHot && (
-            <div className="text-xs text-[#FF3B30] overflow-auto">
-              {
-                SPICY_STUFF_GUILLERMO[
-                  Math.floor(Math.random() * SPICY_STUFF_GUILLERMO.length)
-                ]
-              }
+      {/* Special Instructions - Show only when item is selected */}
+      {itemName && selectedMenuItem && (
+        <div className="mb-3">
+          <textarea
+            value={specialInstructions}
+            onChange={(e) => setSpecialInstructions(e.target.value)}
+            placeholder="Special instructions (optional)"
+            className="w-full p-2 border border-slate-400 rounded-lg bg-white text-slate-800 placeholder-slate-500 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+            rows={2}
+            maxLength={200}
+          />
+          {specialInstructions.length > 150 && (
+            <div className="text-xs text-slate-600 mt-1">
+              {200 - specialInstructions.length} characters remaining
             </div>
           )}
         </div>
@@ -234,27 +173,6 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
       >
         Add To Order
       </Button>
-
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #ff3b30;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #ff3b30;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-      `}</style>
     </div>
   );
 };

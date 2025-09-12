@@ -53,11 +53,30 @@ export const removeOrderUtil = async (orderId: string): Promise<void> => {
   if (!supabase) {
     throw new Error("Supabase client not available");
   }
-  console.log("TEST");
   const { error } = await supabase.from("orders").delete().eq("id", orderId);
 
   if (error) {
     throw new Error(`Failed to remove order: ${error.message}`);
+  }
+};
+
+/**
+ * Add a simple order to the database without returning data
+ */
+export const addOrderSimpleUtil = async (orderData: CreateOrderData, userName?: string): Promise<void> => {
+  if (!supabase) {
+    throw new Error("Supabase client not available");
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .insert({
+      ...orderData,
+      user_name: userName,
+    });
+
+  if (error) {
+    throw new Error(`Failed to add order: ${error.message}`);
   }
 };
 

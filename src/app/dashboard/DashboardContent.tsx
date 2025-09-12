@@ -10,6 +10,9 @@ export default function DashboardContent() {
   const { activeEvent } = useActiveEvent();
   const { orders } = useOrders(activeEvent?.id);
 
+  // Check if current user is the host of the active event
+  const isHost = user && activeEvent && activeEvent.host_id === user.id;
+
   const eventStatusButton = () => {
     if (activeEvent) {
       return (
@@ -17,7 +20,7 @@ export default function DashboardContent() {
           href="/order"
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
         >
-          🎉 View Events
+          🍛 Order Page
         </Link>
       );
     }
@@ -29,6 +32,21 @@ export default function DashboardContent() {
         📅 Host Event
       </Link>
     );
+  };
+
+  const editEventButton = () => {
+    // Show edit button only if user is the host of the active event
+    if (isHost && activeEvent) {
+      return (
+        <Link
+          href={`/edit-event/${activeEvent.id}`}
+          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
+        >
+          ✏️ Edit Event
+        </Link>
+      );
+    }
+    return null;
   };
 
   const overviewButton = () => {
@@ -70,6 +88,7 @@ export default function DashboardContent() {
                 {/* Action Buttons */}
                 <div className="space-y-3 mb-6 flex flex-col items-center">
                   {eventStatusButton()}
+                  {editEventButton()}
                   {overviewButton()}
                   <Link
                     href="/profile/edit"
