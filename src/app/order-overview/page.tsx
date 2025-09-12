@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/ui/button";
-import UserInfo from "@/components/IFNInfo";
+import UserInfo from "@/components/EventInfo";
 import OrderList from "@/components/OrderList";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";

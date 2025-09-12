@@ -20,7 +20,7 @@ export default function DashboardContent() {
           href="/order"
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
         >
-          🎉 View Events
+          🍛 Order Page
         </Link>
       );
     }

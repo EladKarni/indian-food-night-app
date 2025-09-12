@@ -171,40 +171,41 @@ function OrderModePageContent() {
                     <div className="text-xs text-slate-600 space-y-1">
                       {Object.entries(group.spice_levels)
                         .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                        .filter(
-                          ([spiceLevel]) =>
-                            !(spiceLevel === "10" && group.indian_hot_count > 0)
-                        )
-                        .map(([spiceLevel, count]) => (
-                          <div
-                            key={spiceLevel}
-                            className="flex justify-between"
-                          >
-                            <span>Spice Level {spiceLevel}:</span>
-                            <span className="font-medium">{count}x</span>
-                          </div>
-                        ))}
-
-                      {/* Indian Hot - show instead of spice level 10 */}
-                      {group.indian_hot_count > 0 && (
-                        <div className="flex justify-between text-red-600 font-medium">
-                          <span>Indian Hot 🌶️:</span>
-                          <span>{group.indian_hot_count}x</span>
-                        </div>
-                      )}
-
-                      {/* Show remaining spice level 10 items that are NOT indian hot */}
-                      {group.spice_levels["10"] &&
-                        group.spice_levels["10"] > group.indian_hot_count && (
-                          <div className="flex justify-between">
-                            <span>Spice Level 10:</span>
-                            <span className="font-medium">
-                              {group.spice_levels["10"] -
-                                group.indian_hot_count}
-                              x
-                            </span>
-                          </div>
-                        )}
+                        .map(([spiceLevel, count]) => {
+                          // For spice level 10, we need to handle Indian Hot separately
+                          if (spiceLevel === "10") {
+                            const regularLevel10 = count - group.indian_hot_count;
+                            return (
+                              <div key={spiceLevel}>
+                                {/* Show regular spice level 10 if any */}
+                                {regularLevel10 > 0 && (
+                                  <div className="flex justify-between">
+                                    <span>Spice Level 10:</span>
+                                    <span className="font-medium">{regularLevel10}x</span>
+                                  </div>
+                                )}
+                                {/* Show Indian Hot */}
+                                {group.indian_hot_count > 0 && (
+                                  <div className="flex justify-between text-red-600 font-medium">
+                                    <span>Indian Hot 🌶️:</span>
+                                    <span>{group.indian_hot_count}x</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          
+                          // For all other spice levels, show normally
+                          return (
+                            <div
+                              key={spiceLevel}
+                              className="flex justify-between"
+                            >
+                              <span>Spice Level {spiceLevel}:</span>
+                              <span className="font-medium">{count}x</span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 ))}

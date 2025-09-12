@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
-import IFNInfo from "@/components/IFNInfo";
+import EventInfo from "@/components/EventInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
 import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
@@ -61,13 +61,13 @@ function OrderPageContent() {
         {/* Header */}
         <div className="bg-orange-400 text-center py-3 px-4 relative">
           <h1 className="text-xs font-medium text-slate-700 leading-tight">
-            Ordering From: Coriander India Grill
+            Place Your Order
           </h1>
         </div>
 
         <div className="p-6 space-y-6">
           {/* User Info */}
-          <IFNInfo className="mb-8" />
+          <EventInfo className="mb-8" />
 
           {/* Order Section */}
           <div>
@@ -117,7 +117,11 @@ function OrderPageContent() {
                   }
                 }}
               >
-                {finalizing ? "Finalizing..." : allOrdersSubmitted ? "Order Overview" : "Finalize Order"}
+                {finalizing
+                  ? "Finalizing..."
+                  : allOrdersSubmitted
+                  ? "Order Overview"
+                  : "Finalize Order"}
               </Button>
             </div>
           )}

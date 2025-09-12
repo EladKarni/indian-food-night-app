@@ -188,15 +188,6 @@ const OrderListItem = ({
             {order.is_indian_hot ? " (Indian Hot)" : ""}
           </div>
         )}
-        {isOverviewPage && (
-          <div
-            className={`text-xs mt-1 ${
-              isGrayedOut ? "text-slate-400" : "text-slate-600"
-            }`}
-          >
-            ${order.menu_items.price.toFixed(2)}
-          </div>
-        )}
         {order.special_instructions && (
           <div
             className={`text-xs mt-1 ${
