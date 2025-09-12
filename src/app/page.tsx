@@ -22,7 +22,7 @@ export default function Home() {
     }
 
     return (
-      <div className="space-x-4 flex flex-col items-center justify-center space-y-4">
+      <div className="flex flex-col items-center justify-center space-y-4">
         {!user && (
           <div className="w-full">
             <FormInput
