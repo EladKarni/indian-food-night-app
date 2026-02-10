@@ -14,29 +14,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a Next.js 15 application with TypeScript, using the App Router architecture. Key architectural components:
 
 ### Authentication System
+
 - **Supabase Integration**: Authentication handled through Supabase with client setup in `src/lib/supabase.ts`
 - **Auth Context**: Global authentication state managed via `src/contexts/AuthContext.tsx` using React Context
 - **Protected Routes**: `src/components/ProtectedRoute.tsx` component wraps protected pages and redirects unauthenticated users to `/login`
-- **Environment Variables**: Requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Environment Variables**: Requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 
 ### UI System
+
 - **Styling**: TailwindCSS with DaisyUI component library
 - **Theme**: Default theme set to "dim" in layout, with custom theme configurations in `tailwind.config.ts`
-- **Component Structure**: 
+- **Component Structure**:
   - `src/ui/` - Reusable UI primitives (buttons, inputs, icons)
   - `src/components/` - Complex components (navbar, footer, navigation)
   - `src/views/` - Page-level view components
 
 ### Navigation
+
 - Navigation links defined in `src/constants/navLinks.ts`
 - `src/components/NavLinks.tsx` handles navigation rendering
 - Mobile menu support via `src/components/MobileMenu.tsx`
 
 ### File Organization
+
 ```
 src/
 ├── app/           # Next.js App Router pages
-├── components/    # Reusable React components  
+├── components/    # Reusable React components
 ├── contexts/      # React Context providers
 ├── constants/     # Static data and configuration
 ├── hooks/         # Custom React hooks

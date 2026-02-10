@@ -79,7 +79,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
       };
 
       // Use spice level 0 for items that don't need spice levels
-      const finalSpiceLevel = shouldShowSpiceSelector(selectedMenuItem) ? spiceLevel : 0;
+      const finalSpiceLevel = shouldShowSpiceSelector(selectedMenuItem) ? spiceLevel : null;
       const finalIndianHot = shouldShowSpiceSelector(selectedMenuItem) ? indianHot : false;
 
       await addOrderUtil(
