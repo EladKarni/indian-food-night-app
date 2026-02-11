@@ -43,10 +43,10 @@ export default function EventInfo({ className }: UserInfoProps) {
   }
 
   // Generate URLs
-  const googleMapsUrl = address 
+  const googleMapsUrl = address
     ? `https://www.google.com/maps?q=${encodeURIComponent(address)}`
     : null;
-  const menuUrl = `https://www.google.com/search?q=${encodeURIComponent(restaurant + " menu")}`;
+  const menuUrl = "https://corianderindiangrill.com/ourmenu.html";
 
   const handleMenuClick = () => {
     window.open(menuUrl, '_blank');
