@@ -24,7 +24,7 @@ function EventSection() {
     <div className="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
       {!user && (
         <div className="w-full">
-          <div className="border-t border-slate-300 w-full pt-4">
+          <div className="w-full py-4">
             <p className="text-slate-600 text-center">
               Just placing an order? No signup needed!
               {activeEvent && " Enter your name below and join the event."}
@@ -33,6 +33,8 @@ function EventSection() {
           </div>
           <FormInput
             type="text"
+            name="guestName"
+            id="guestName"
             placeholder="Enter your name"
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
@@ -43,8 +45,8 @@ function EventSection() {
       <Link
         href="/order"
         className={`font-medium py-3 px-6 rounded-2xl transition-colors w-full text-center inline-block ${user || isValidGuestName
-            ? "bg-orange-500 hover:bg-orange-600 text-white"
-            : "bg-gray-400 text-gray-600 cursor-not-allowed pointer-events-none"
+          ? "bg-orange-500 hover:bg-orange-600 text-white"
+          : "bg-gray-400 text-gray-600 cursor-not-allowed pointer-events-none"
           }`}
       >
         Join Event
@@ -101,6 +103,7 @@ export default function Home() {
           IFN
         </h1>
         <EventSection />
+        <div className="border-b border-slate-300" />
         <AuthSection />
       </div>
     </PageContainer>
