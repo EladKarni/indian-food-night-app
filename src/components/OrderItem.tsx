@@ -17,13 +17,21 @@ interface OrderItemProps {
 
 const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
   const [itemName, setItemName] = useState("");
-  const [spiceLevel, setSpiceLevel] = useState(1);
+  const [spiceLevel, setSpiceLevel] = useState(0);
   const [indianHot, setIndianHot] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const { guestName } = useGuestName();
   const { activeEvent } = useActiveEvent();
   const { user } = useAuth();
   const autocompleteRef = useRef<HTMLInputElement>(null);
+
+  // Handler for spice level changes that auto-disables Indian Hot if below 10
+  const handleSpiceLevelChange = (level: number) => {
+    setSpiceLevel(level);
+    if (level < 10 && indianHot) {
+      setIndianHot(false);
+    }
+  };
 
   const { menuItems, isLoading: menuLoading, error: menuError } = useMenu();
 
@@ -37,13 +45,14 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
 
   const handleItemSelect = (selectedItem: any) => {
     setItemName(selectedItem.name);
-    
+
     // Set spice level to 0 for items that don't need spice levels
     if (!shouldShowSpiceSelector(selectedItem)) {
       setSpiceLevel(0);
       setIndianHot(false);
     } else {
-      setSpiceLevel(selectedItem.spiceLevel);
+      // Default to 0 for items that can have spice levels
+      setSpiceLevel(0);
     }
   };
 
@@ -103,7 +112,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
 
       // Clear the form after successful addition
       setItemName("");
-      setSpiceLevel(1);
+      setSpiceLevel(0);
       setIndianHot(false);
       setSpecialInstructions("");
       
@@ -136,7 +145,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
 
       <SpiceSelector
         spiceLevel={spiceLevel}
-        onSpiceLevelChange={setSpiceLevel}
+        onSpiceLevelChange={handleSpiceLevelChange}
         indianHot={indianHot}
         onIndianHotChange={setIndianHot}
         shouldShow={shouldShowSpiceSelector(selectedMenuItem || null)}
