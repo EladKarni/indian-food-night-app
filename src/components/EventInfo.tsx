@@ -4,15 +4,7 @@ import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useHostProfile } from "@/hooks/useHostProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
-
-// Helper function to convert 24-hour time to 12-hour AM/PM format
-const formatTimeToAMPM = (time24: string): string => {
-  const [hours, minutes] = time24.split(':');
-  const hour = parseInt(hours, 10);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minutes} ${ampm}`;
-};
+import { formatTimeToAMPM } from "@/util/timeUtils";
 
 interface UserInfoProps {
   showProfilePicture?: boolean;

@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getNextWednesday } from "@/util/dateUtils";
+import { calculateCutoffTimeString } from "@/util/timeUtils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -129,23 +130,15 @@ export default function CreateEventContent() {
                   <option value={120}>2 hours before</option>
                   <option value={180}>3 hours before</option>
                 </select>
-                {formData.time && formData.event_date && (() => {
-                  const [hours, minutes] = formData.time.split(':').map(Number);
-                  const eventDateTime = new Date(formData.event_date);
-                  eventDateTime.setHours(hours, minutes, 0, 0);
-                  const cutoffDateTime = new Date(eventDateTime);
-                  cutoffDateTime.setMinutes(cutoffDateTime.getMinutes() - formData.cutoff_minutes_before);
-                  const cutoffHours = cutoffDateTime.getHours();
-                  const cutoffMinutes = cutoffDateTime.getMinutes();
-                  const ampm = cutoffHours >= 12 ? 'PM' : 'AM';
-                  const hour12 = cutoffHours % 12 || 12;
-                  const cutoffTimeStr = `${hour12}:${cutoffMinutes.toString().padStart(2, '0')} ${ampm}`;
-                  return (
-                    <p className="text-sm text-base-content/60 mt-1">
-                      Orders will close at {cutoffTimeStr}
-                    </p>
-                  );
-                })()}
+                {formData.time && formData.event_date && (
+                  <p className="text-sm text-base-content/60 mt-1">
+                    Orders will close at {calculateCutoffTimeString(
+                      formData.event_date,
+                      formData.time,
+                      formData.cutoff_minutes_before
+                    )}
+                  </p>
+                )}
               </div>
 
               <div>
