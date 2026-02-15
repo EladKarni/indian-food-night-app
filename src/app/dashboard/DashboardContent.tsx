@@ -4,6 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders } from "@/hooks/useOrders";
 import Link from "next/link";
+import EventStatusButton from "@/components/dashboard/EventStatusButton";
+import EditEventButton from "@/components/dashboard/EditEventButton";
+import OverviewButton from "@/components/dashboard/OverviewButton";
 
 export default function DashboardContent() {
   const { user } = useAuth();
@@ -12,57 +15,6 @@ export default function DashboardContent() {
 
   // Check if current user is the host of the active event
   const isHost = user && activeEvent && activeEvent.host_id === user.id;
-
-  const eventStatusButton = () => {
-    if (activeEvent) {
-      return (
-        <Link
-          href="/order"
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-        >
-          🍛 Order Page
-        </Link>
-      );
-    }
-    return (
-      <Link
-        href="/create-event"
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-      >
-        📅 Host Event
-      </Link>
-    );
-  };
-
-  const editEventButton = () => {
-    // Show edit button only if user is the host of the active event
-    if (isHost && activeEvent) {
-      return (
-        <Link
-          href={`/edit-event/${activeEvent.id}`}
-          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-        >
-          ✏️ Edit Event
-        </Link>
-      );
-    }
-    return null;
-  };
-
-  const overviewButton = () => {
-    // Show overview button only if there's an active event and it has more than one order
-    if (activeEvent && orders.length > 1) {
-      return (
-        <Link
-          href="/order-overview"
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-        >
-          📋 View Order Overview
-        </Link>
-      );
-    }
-    return null;
-  };
 
   if (!user) return null;
 
@@ -87,9 +39,9 @@ export default function DashboardContent() {
 
                 {/* Action Buttons */}
                 <div className="space-y-3 mb-6 flex flex-col items-center">
-                  {eventStatusButton()}
-                  {editEventButton()}
-                  {overviewButton()}
+                  <EventStatusButton event={activeEvent} />
+                  {isHost && activeEvent && <EditEventButton eventId={activeEvent.id} />}
+                  {activeEvent && orders.length > 1 && <OverviewButton />}
                   <Link
                     href="/profile/edit"
                     className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
