@@ -5,6 +5,7 @@ import { useHostProfile } from "@/hooks/useHostProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import { formatTimeToAMPM } from "@/util/timeUtils";
+import IconButton from "@/ui/IconButton";
 
 interface UserInfoProps {
   showProfilePicture?: boolean;
@@ -78,13 +79,12 @@ export default function EventInfo({ className }: UserInfoProps) {
           </div>
         </div>
 
-        <button
+        <IconButton
           onClick={handleMenuClick}
-          className="w-10 h-10 bg-orange-600 hover:bg-orange-700 rounded-full flex items-center justify-center ml-4 transition-colors duration-200 shadow-sm hover:shadow-md"
+          className="w-10 h-10 bg-orange-600 hover:bg-orange-700 ml-4 shadow-sm hover:shadow-md"
           title="View restaurant menu"
-        >
-          <span className="text-white text-lg">📋</span>
-        </button>
+          icon={<span className="text-white text-lg">📋</span>}
+        />
       </div>
     );
   }
@@ -117,13 +117,12 @@ export default function EventInfo({ className }: UserInfoProps) {
       </div>
 
       {address && (
-        <button
+        <IconButton
           onClick={handleNavigateClick}
-          className="w-10 h-10 bg-green-600 hover:bg-green-700 rounded-full flex items-center justify-center ml-4 transition-colors duration-200 shadow-sm hover:shadow-md"
+          className="w-10 h-10 bg-green-600 hover:bg-green-700 ml-4 shadow-sm hover:shadow-md"
           title="Navigate to location"
-        >
-          <span className="text-white text-lg">🚗</span>
-        </button>
+          icon={<span className="text-white text-lg">🚗</span>}
+        />
       )}
     </div>
   );
