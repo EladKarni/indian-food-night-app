@@ -42,6 +42,7 @@ export type Database = {
       events: {
         Row: {
           created_at: string | null
+          cutoff_minutes_before: number | null
           event_date: string
           host_id: string | null
           id: string
@@ -52,6 +53,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          cutoff_minutes_before?: number | null
           event_date: string
           host_id?: string | null
           id?: string
@@ -62,6 +64,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          cutoff_minutes_before?: number | null
           event_date?: string
           host_id?: string | null
           id?: string

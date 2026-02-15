@@ -20,6 +20,7 @@ interface EventData {
   restaurant: string | null;
   location: string;
   host_id: string | null;
+  cutoff_minutes_before: number | null;
 }
 
 export default function EditEventPage() {
@@ -37,6 +38,7 @@ export default function EditEventPage() {
     time: "",
     restaurant: "",
     location: "",
+    cutoff_minutes_before: 60,
   });
 
   // Fetch event data
@@ -73,6 +75,7 @@ export default function EditEventPage() {
           time: data.start_time || "18:30",
           restaurant: data.restaurant || "Coriander Indian Grill",
           location: data.location,
+          cutoff_minutes_before: data.cutoff_minutes_before ?? 60,
         });
       } catch (err) {
         setError("Failed to fetch event data");
@@ -85,12 +88,12 @@ export default function EditEventPage() {
   }, [eventId, user]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "cutoff_minutes_before" ? parseInt(value, 10) : value,
     }));
   };
 
@@ -112,6 +115,7 @@ export default function EditEventPage() {
           location: formData.location,
           restaurant: formData.restaurant,
           start_time: formData.time,
+          cutoff_minutes_before: formData.cutoff_minutes_before,
         },
         user.id
       );
@@ -201,6 +205,41 @@ export default function EditEventPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <FormLabel variant="daisyui">
+                  Order Cut-off <i>(optional - defaults to 1 hour before)</i>
+                </FormLabel>
+                <select
+                  name="cutoff_minutes_before"
+                  value={formData.cutoff_minutes_before}
+                  onChange={handleInputChange}
+                  className="select select-bordered w-full"
+                >
+                  <option value={30}>30 minutes before</option>
+                  <option value={60}>1 hour before (recommended)</option>
+                  <option value={90}>90 minutes before</option>
+                  <option value={120}>2 hours before</option>
+                  <option value={180}>3 hours before</option>
+                </select>
+                {formData.time && formData.event_date && (() => {
+                  const [hours, minutes] = formData.time.split(':').map(Number);
+                  const eventDateTime = new Date(formData.event_date);
+                  eventDateTime.setHours(hours, minutes, 0, 0);
+                  const cutoffDateTime = new Date(eventDateTime);
+                  cutoffDateTime.setMinutes(cutoffDateTime.getMinutes() - formData.cutoff_minutes_before);
+                  const cutoffHours = cutoffDateTime.getHours();
+                  const cutoffMinutes = cutoffDateTime.getMinutes();
+                  const ampm = cutoffHours >= 12 ? 'PM' : 'AM';
+                  const hour12 = cutoffHours % 12 || 12;
+                  const cutoffTimeStr = `${hour12}:${cutoffMinutes.toString().padStart(2, '0')} ${ampm}`;
+                  return (
+                    <p className="text-sm text-base-content/60 mt-1">
+                      Orders will close at {cutoffTimeStr}
+                    </p>
+                  );
+                })()}
               </div>
 
               <div>

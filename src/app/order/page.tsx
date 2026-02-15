@@ -5,10 +5,13 @@ import Link from "next/link";
 import EventInfo from "@/components/EventInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
+import { CutoffWarningBanner } from "@/components/CutoffWarningBanner";
 import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
+import { useHostProfile } from "@/hooks/useHostProfile";
+import { calculateCutoffStatus, formatCutoffTime } from "@/util/cutoffUtil";
 import Button from "@/ui/button";
 
 function OrderPageContent() {
@@ -18,8 +21,12 @@ function OrderPageContent() {
   );
   const { user } = useAuth();
   const { guestName } = useGuestName();
+  const { hostProfile } = useHostProfile(activeEvent?.host_id);
   const [finalizing, setFinalizing] = useState(false);
   const [localOrders, setLocalOrders] = useState<OrderWithMenuItem[]>([]);
+
+  // Calculate cutoff status
+  const cutoffStatus = calculateCutoffStatus(activeEvent);
 
   // Use local orders if available, otherwise use hook orders
   const orders = localOrders.length > 0 ? localOrders : hookOrders;
@@ -68,6 +75,14 @@ function OrderPageContent() {
         <div className="p-6 space-y-6">
           {/* User Info */}
           <EventInfo className="mb-8" />
+
+          {/* Cutoff Warning Banner */}
+          {cutoffStatus?.isPastCutoff && cutoffStatus.cutoffDateTime && (
+            <CutoffWarningBanner
+              hostName={hostProfile?.full_name || hostProfile?.email || "the host"}
+              cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
+            />
+          )}
 
           {/* Order Section */}
           <div>
