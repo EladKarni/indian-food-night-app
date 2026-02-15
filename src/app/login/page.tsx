@@ -11,6 +11,7 @@ import AlertMessage from "@/ui/AlertMessage";
 import LoadingSpinner from "@/ui/LoadingSpinner";
 import Button from "@/ui/button";
 import Icon from "@/ui/Icon";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -70,6 +71,23 @@ export default function LoginPage() {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Host Login</h2>
         <p className="text-slate-600 text-sm italic">Login to host IFN</p>
+      </div>
+
+      {/* Google Sign In Button */}
+      <div className="mb-6">
+        <GoogleSignInButton mode="signin" onError={(err) => setError(err)} />
+      </div>
+
+      {/* Separator */}
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-300"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 text-slate-700">
+            or continue with email
+          </span>
+        </div>
       </div>
 
       <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
