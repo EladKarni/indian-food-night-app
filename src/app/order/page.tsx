@@ -21,7 +21,7 @@ function OrderPageContent() {
   );
   const { user } = useAuth();
   const { guestName } = useGuestName();
-  const { hostProfile } = useHostProfile(activeEvent?.host_id);
+  const { hostProfile } = useHostProfile(activeEvent?.host_id ?? undefined);
   const [finalizing, setFinalizing] = useState(false);
   const [localOrders, setLocalOrders] = useState<OrderWithMenuItem[]>([]);
 
