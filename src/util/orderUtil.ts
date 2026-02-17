@@ -30,6 +30,7 @@ export const addOrderUtil = async (
     .insert({
       ...orderData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
+      user_id: options.user.id,
     })
     .select(
       `
@@ -63,7 +64,7 @@ export const removeOrderUtil = async (orderId: string): Promise<void> => {
 /**
  * Add a simple order to the database without returning data
  */
-export const addOrderSimpleUtil = async (orderData: CreateOrderData, userName?: string): Promise<void> => {
+export const addOrderSimpleUtil = async (orderData: CreateOrderData, userName?: string, userId?: string): Promise<void> => {
   if (!supabase) {
     throw new Error("Supabase client not available");
   }
@@ -73,6 +74,7 @@ export const addOrderSimpleUtil = async (orderData: CreateOrderData, userName?: 
     .insert({
       ...orderData,
       user_name: userName,
+      user_id: userId || null,
     });
 
   if (error) {
@@ -105,6 +107,7 @@ export const duplicateOrderUtil = async (
     .insert({
       ...duplicateData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
+      user_id: options.user.id,
     })
     .select(
       `

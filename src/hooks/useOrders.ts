@@ -78,6 +78,7 @@ export const useOrders = (eventId?: string) => {
           .insert({
             ...orderData,
             user_name: userName,
+            user_id: user?.id || null,
           })
           .select(
             `

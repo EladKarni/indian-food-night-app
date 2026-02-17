@@ -69,8 +69,8 @@ export default function LoginPage() {
           <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-700 rounded-full shadow-lg"></div>
           <div className="absolute -bottom-1 -left-1 w-6 h-12 bg-green-600 rounded-full"></div>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Host Login</h2>
-        <p className="text-slate-600 text-sm italic">Login to host IFN</p>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome Back</h2>
+        <p className="text-slate-600 text-sm italic">Login to Indian Food Night</p>
       </div>
 
       {/* Google Sign In Button */}
@@ -84,7 +84,7 @@ export default function LoginPage() {
           <div className="w-full border-t border-slate-300"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 text-slate-700">
+          <span className="px-2 bg-orange-200 text-slate-700">
             or continue with email
           </span>
         </div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
 
         {/* Sign Up Link */}
         <div className="text-center pt-4">
-          <span className="text-slate-600 text-sm">Want to host? </span>
+          <span className="text-slate-600 text-sm">Don't have an account? </span>
           <FormLink href="/signup">Sign Up</FormLink>
         </div>
       </form>

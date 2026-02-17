@@ -43,6 +43,12 @@ export default function DashboardContent() {
                   {isHost && activeEvent && <EditEventButton eventId={activeEvent.id} />}
                   {activeEvent && orders.length > 1 && <OverviewButton />}
                   <Link
+                    href="/order-history"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
+                  >
+                    📜 Order History
+                  </Link>
+                  <Link
                     href="/profile/edit"
                     className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
                   >

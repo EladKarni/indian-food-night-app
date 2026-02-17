@@ -86,7 +86,8 @@ export default function SignupPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Signup</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Create Account</h2>
+          <p className="text-slate-600 text-sm italic">Join Indian Food Night</p>
         </div>
 
         {/* Google Sign Up Button */}
@@ -100,7 +101,7 @@ export default function SignupPage() {
             <div className="w-full border-t border-slate-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 text-slate-700">
+            <span className="px-2 bg-orange-200 text-slate-700">
               or sign up with email
             </span>
           </div>
