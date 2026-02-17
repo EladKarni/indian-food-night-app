@@ -67,7 +67,7 @@ export const usePastEvents = () => {
       // Transform data to include totals
       const eventsWithTotals: PastEventWithOrders[] = (events || []).map(event => {
         // Filter orders to only include current user's orders
-        const userOrders = (event.orders || []).filter(order =>
+        const userOrders = (event.orders || []).filter((order: OrderWithMenuItem) =>
           order.user_id === user.id || order.user_name === userName
         ) as OrderWithMenuItem[];
 

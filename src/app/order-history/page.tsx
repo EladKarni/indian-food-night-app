@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { usePastEvents } from "@/hooks/usePastEvents";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
@@ -14,8 +13,6 @@ function OrderHistoryContent() {
   const { pastEvents, loading, error } = usePastEvents();
   const { activeEvent } = useActiveEvent();
   const { user } = useAuth();
-  const [reordering, setReordering] = useState(false);
-
   const handleReorder = async (eventId: string, orderIds?: string[]) => {
     if (!activeEvent) {
       alert("No active event available for ordering.");
@@ -27,7 +24,6 @@ function OrderHistoryContent() {
       return;
     }
 
-    setReordering(true);
     try {
       const pastEvent = pastEvents.find(e => e.id === eventId);
       if (!pastEvent) {
@@ -46,12 +42,10 @@ function OrderHistoryContent() {
     } catch (err) {
       console.error("Re-order failed:", err);
       alert(err instanceof Error ? err.message : "Failed to re-order items");
-    } finally {
-      setReordering(false);
     }
   };
 
-  const handleViewDetails = (eventId: string) => {
+  const handleViewDetails = (_eventId: string) => {
     // For now, just expand the card
     // Could navigate to dedicated event detail page in future
   };
@@ -104,7 +98,7 @@ function OrderHistoryContent() {
               <div className="text-6xl mb-4">📦</div>
               <p className="text-slate-700 font-medium mb-2">No Past Orders</p>
               <p className="text-slate-600 text-sm mb-6">
-                You haven't placed any orders yet.
+                You haven&apos;t placed any orders yet.
               </p>
               <Link href="/order">
                 <Button variant="primary" size="md">

@@ -93,6 +93,7 @@ export const OrderList = ({
           id: `temp-${Date.now()}`, // Temporary ID
           ...duplicateData,
           user_name: userName || 'Guest',
+          user_id: user?.id || null,
           created_at: new Date().toISOString(),
           is_submitted: false,
           menu_items: order.menu_items, // Copy menu item data

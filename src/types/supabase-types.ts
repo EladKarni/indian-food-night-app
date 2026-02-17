@@ -126,6 +126,7 @@ export type Database = {
           menu_item_id: string
           special_instructions: string | null
           spice_level: number | null
+          user_id: string | null
           user_name: string | null
         }
         Insert: {
@@ -137,6 +138,7 @@ export type Database = {
           menu_item_id: string
           special_instructions?: string | null
           spice_level?: number | null
+          user_id?: string | null
           user_name?: string | null
         }
         Update: {
@@ -148,6 +150,7 @@ export type Database = {
           menu_item_id?: string
           special_instructions?: string | null
           spice_level?: number | null
+          user_id?: string | null
           user_name?: string | null
         }
         Relationships: [
