@@ -96,15 +96,10 @@ function OrderHistoryContent() {
           {pastEvents.length === 0 && !error && (
             <div className="text-center py-8">
               <div className="text-6xl mb-4">📦</div>
-              <p className="text-slate-700 font-medium mb-2">No Past Orders</p>
-              <p className="text-slate-600 text-sm mb-6">
-                You haven&apos;t placed any orders yet.
+              <p className="text-slate-700 font-medium mb-2">No Past Orders Yet</p>
+              <p className="text-slate-600 text-sm">
+                Once you participate in an event and place an order, it will show up here so you can easily re-order next time.
               </p>
-              <Link href="/order">
-                <Button variant="primary" size="md">
-                  Place Your First Order
-                </Button>
-              </Link>
             </div>
           )}
 
