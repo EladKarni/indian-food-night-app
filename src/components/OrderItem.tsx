@@ -82,7 +82,6 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
     try {
       // Create user object for logged in user or guest
       const orderUser = user || {
-        id: "guest",
         email: guestName.trim(),
         user_metadata: { full_name: guestName.trim() },
       };

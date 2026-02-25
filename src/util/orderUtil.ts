@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { CreateOrderData, OrderWithMenuItem } from "@/hooks/useOrders";
 
 type User = {
-  id: string;
+  id?: string | null;
   email?: string;
   user_metadata?: {
     full_name?: string;
@@ -30,7 +30,7 @@ export const addOrderUtil = async (
     .insert({
       ...orderData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
-      user_id: options.user.id,
+      user_id: options.user.id || null,
     })
     .select(
       `
