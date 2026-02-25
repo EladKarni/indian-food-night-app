@@ -6,11 +6,12 @@ import { useOrders } from "@/hooks/useOrders";
 import Link from "next/link";
 import EventStatusButton from "@/components/dashboard/EventStatusButton";
 import EditEventButton from "@/components/dashboard/EditEventButton";
+import DeleteEventButton from "@/components/dashboard/DeleteEventButton";
 import OverviewButton from "@/components/dashboard/OverviewButton";
 
 export default function DashboardContent() {
   const { user } = useAuth();
-  const { activeEvent } = useActiveEvent();
+  const { activeEvent, refreshActiveEvent } = useActiveEvent();
   const { orders } = useOrders(activeEvent?.id);
 
   // Check if current user is the host of the active event
@@ -41,6 +42,7 @@ export default function DashboardContent() {
                 <div className="space-y-3 mb-6 flex flex-col items-center">
                   <EventStatusButton event={activeEvent} />
                   {isHost && activeEvent && <EditEventButton eventId={activeEvent.id} />}
+                  {isHost && activeEvent && <DeleteEventButton eventId={activeEvent.id} userId={user.id} onDeleted={refreshActiveEvent} />}
                   {activeEvent && orders.length > 1 && <OverviewButton />}
                   <Link
                     href="/order-history"

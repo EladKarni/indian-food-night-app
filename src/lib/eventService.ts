@@ -28,6 +28,51 @@ export async function checkForEvents() {
 }
 
 /**
+ * Deletes an existing event (host only)
+ * @param eventId - The ID of the event to delete
+ * @param userId - The ID of the user making the request (for authorization)
+ * @returns Promise with success or error
+ */
+export async function deleteEvent(eventId: string, userId: string) {
+  if (!supabase) throw new Error("Supabase client not available");
+
+  try {
+    // First verify the user is the host of this event
+    const { data: existingEvent, error: fetchError } = await supabase
+      .from("events")
+      .select("host_id")
+      .eq("id", eventId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch event: ${fetchError.message}`);
+    }
+
+    if (!existingEvent) {
+      throw new Error("Event not found");
+    }
+
+    if (existingEvent.host_id !== userId) {
+      throw new Error("You are not authorized to delete this event");
+    }
+
+    const { error } = await supabase.from("events").delete().eq("id", eventId);
+
+    if (error) {
+      throw new Error(`Failed to delete event: ${error.message}`);
+    }
+
+    return { error: null };
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to delete event",
+    };
+  }
+}
+
+/**
  * Updates an existing event
  * @param eventId - The ID of the event to update
  * @param updates - The fields to update

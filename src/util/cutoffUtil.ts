@@ -25,7 +25,8 @@ export function calculateCutoffStatus(
 
   // Parse event datetime (assumes times are in local timezone)
   const [hours, minutes] = event.start_time.split(":").map(Number);
-  const eventDateTime = new Date(event.event_date);
+  // Use slash-separated date to force local (not UTC) date parsing
+  const eventDateTime = new Date(event.event_date.replace(/-/g, "/"));
   eventDateTime.setHours(hours, minutes, 0, 0);
 
   // Calculate cutoff datetime
