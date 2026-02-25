@@ -175,6 +175,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         onClick={handleAddOrder}
         disabled={
           !itemName ||
+          !selectedMenuItem ||
           !activeEvent ||
           (!user && !guestName.trim()) ||
           isDisabled
