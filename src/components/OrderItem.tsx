@@ -10,6 +10,7 @@ import { useGuestName } from "@/hooks/useGuestName";
 import AutocompleteInput from "./AutocompleteInput";
 import SpiceSelector from "./SpiceSelector";
 import { shouldShowSpiceSelector } from "@/util/spiceUtil";
+import ReportMenuItemForm from "./ReportMenuItemForm";
 
 interface OrderItemProps {
   onOrderAdded?: () => Promise<void> | void;
@@ -34,6 +35,8 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
   };
 
   const { menuItems, isLoading: menuLoading, error: menuError } = useMenu();
+
+  const senderName = user?.user_metadata?.full_name || user?.email || guestName.trim();
 
   // Show loading state while menu is loading
   const isDisabled = menuLoading || !!menuError;
@@ -165,6 +168,17 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
             <div className="text-xs text-slate-600 mt-1">
               {200 - specialInstructions.length} characters remaining
             </div>
+          )}
+
+          {activeEvent && (
+            <ReportMenuItemForm
+              key={selectedMenuItem.id}
+              menuItemName={selectedMenuItem.name}
+              menuItemId={selectedMenuItem.id}
+              eventId={activeEvent.id}
+              senderName={senderName}
+              senderId={user?.id ?? null}
+            />
           )}
         </div>
       )}

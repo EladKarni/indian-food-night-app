@@ -83,6 +83,51 @@ export type Database = {
           },
         ]
       }
+      host_messages: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          menu_item_id: string | null
+          message: string
+          sender_id: string | null
+          sender_name: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          menu_item_id?: string | null
+          message: string
+          sender_id?: string | null
+          sender_name: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          menu_item_id?: string | null
+          message?: string
+          sender_id?: string | null
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_messages_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           category: string | null
