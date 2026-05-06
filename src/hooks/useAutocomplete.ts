@@ -13,13 +13,11 @@ interface AutocompleteItem {
 interface UseAutocompleteProps {
   items: AutocompleteItem[];
   value: string;
-  maxSuggestions?: number;
 }
 
 export function useAutocomplete({
   items,
   value,
-  maxSuggestions = 3,
 }: UseAutocompleteProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -28,10 +26,10 @@ export function useAutocomplete({
     if (!value.trim()) return [];
 
     const searchTerm = value.toLowerCase();
-    return items
-      .filter((item) => item.name.toLowerCase().includes(searchTerm))
-      .slice(0, maxSuggestions);
-  }, [items, value, maxSuggestions]);
+    return items.filter((item) =>
+      item.name.toLowerCase().includes(searchTerm)
+    );
+  }, [items, value]);
 
   const handleKeyDown = (
     e: React.KeyboardEvent,
