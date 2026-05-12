@@ -70,8 +70,12 @@ function OrderPageContent() {
             />
           </div>
 
-          {/* Order Overview Button - Show when user has orders */}
-          {userOrders.length > 0 && (
+          {/* Order Overview Button - Reserve space while loading to prevent layout shift */}
+          {loading ? (
+            <div className="pt-4 border-t border-slate-400/20 space-y-3">
+              <div className="skeleton h-12 w-full rounded-2xl bg-slate-300/60" />
+            </div>
+          ) : userOrders.length > 0 ? (
             <div className="pt-4 border-t border-slate-400/20 space-y-3">
               <Button
                 fullWidth={true}
@@ -108,7 +112,7 @@ function OrderPageContent() {
                     : "Finalize Order"}
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </main>

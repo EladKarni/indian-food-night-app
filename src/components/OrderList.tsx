@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
 import OrderListItem from "./orders/OrderListItem";
 import OrderListTotals from "./orders/OrderListTotals";
+import OrderListSkeleton from "./orders/OrderListSkeleton";
 
 interface OrderListProps {
   showAllOrders?: boolean;
@@ -96,10 +97,10 @@ export const OrderList = ({
 
   if (loading) {
     return (
-      <div className="text-center py-4">
-        <div className="loading loading-spinner loading-md mb-2"></div>
-        <p className="text-slate-700 text-xs">Loading orders...</p>
-      </div>
+      <OrderListSkeleton
+        showAllOrders={shouldShowAllOrders}
+        isOverviewPage={isOverviewPage}
+      />
     );
   }
 
