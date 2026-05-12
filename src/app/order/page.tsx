@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import Link from "next/link";
+import { Suspense, useState } from "react";
 import EventInfo from "@/components/EventInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
 import { CutoffWarningBanner } from "@/components/CutoffWarningBanner";
-import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
+import { useOrders } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
@@ -16,49 +15,22 @@ import Button from "@/ui/button";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
-  const { orders: hookOrders, loading, error, refetch, updateOrder } = useOrders(
+  const { orders, loading, error, refetch, updateOrder } = useOrders(
     activeEvent?.id
   );
   const { user } = useAuth();
   const { guestName } = useGuestName();
   const { hostProfile } = useHostProfile(activeEvent?.host_id ?? undefined);
   const [finalizing, setFinalizing] = useState(false);
-  const [localOrders, setLocalOrders] = useState<OrderWithMenuItem[]>([]);
 
-  // Calculate cutoff status
   const cutoffStatus = calculateCutoffStatus(activeEvent);
 
-  // Use local orders if available, otherwise use hook orders
-  const orders = localOrders.length > 0 ? localOrders : hookOrders;
-
-  // Update local orders when hook orders change
-  useEffect(() => {
-    setLocalOrders(hookOrders);
-  }, [hookOrders]);
-
-  // Optimistic update functions
-  const handleOrderAdded = (newOrder: OrderWithMenuItem) => {
-    setLocalOrders(prev => [newOrder, ...prev]);
-  };
-
-  const handleOrderRemoved = (orderId: string) => {
-    setLocalOrders(prev => prev.filter(order => order.id !== orderId));
-  };
-
-  const handleOrderUpdated = (updatedOrder: OrderWithMenuItem) => {
-    setLocalOrders(prev => 
-      prev.map(order => order.id === updatedOrder.id ? updatedOrder : order)
-    );
-  };
-
-  // Get current user's orders to check count
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
   const userOrders = orders.filter(
     (order) => order.user_name === currentUserName
   );
-  const hasMultipleOrders = userOrders.length > 1;
-  
+
   // Check if all user orders are already submitted
   const allOrdersSubmitted = userOrders.length > 0 && userOrders.every(order => order.is_submitted);
 
@@ -95,9 +67,6 @@ function OrderPageContent() {
               orders={orders}
               loading={loading}
               error={error}
-              onOrderAdded={handleOrderAdded}
-              onOrderRemoved={handleOrderRemoved}
-              onOrderUpdated={handleOrderUpdated}
             />
           </div>
 
@@ -135,8 +104,8 @@ function OrderPageContent() {
                 {finalizing
                   ? "Finalizing..."
                   : allOrdersSubmitted
-                  ? "Order Overview"
-                  : "Finalize Order"}
+                    ? "Order Overview"
+                    : "Finalize Order"}
               </Button>
             </div>
           )}

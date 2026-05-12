@@ -226,17 +226,17 @@ export default function OrderListItem({
           <PopupMenu
             items={[
               {
-                label: "Duplicate Order",
+                label: "Duplicate",
                 onClick: handleDuplicate,
                 icon: <span className="text-blue-600">⧉</span>,
               },
               ...(isCurrentUserOrder && onEdit ? [{
-                label: "Edit Order",
+                label: "Edit",
                 onClick: handleEdit,
                 icon: <span className="text-orange-600">✎</span>,
               }] : []),
               ...(isCurrentUserOrder ? [{
-                label: "Remove Order",
+                label: "Remove",
                 onClick: handleRemove,
                 icon: <span className="text-red-600">−</span>,
                 className: "text-red-600 hover:text-red-700 hover:bg-red-50",

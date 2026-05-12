@@ -24,7 +24,7 @@ export default function EventInfo({ className }: UserInfoProps) {
     return null;
   }
 
-  const address = hostProfile?.address || activeEvent?.location || "";
+  const address = activeEvent?.location || "Contact Host For Info";
   const restaurant = activeEvent?.restaurant || "Coriander Indian Grill";
   const isOrderPage = pathname === "/order";
   const isOrderOverviewPage = pathname === "/order-overview";
@@ -69,8 +69,8 @@ export default function EventInfo({ className }: UserInfoProps) {
               <span className="text-white text-xs">👤</span>
             </div>
             <span>
-              Hosted by {loading 
-                ? "Loading..." 
+              Hosted by {loading
+                ? "Loading..."
                 : hostProfile?.full_name || hostProfile?.email || "Host"}
               {activeEvent?.start_time
                 ? ` @ ${formatTimeToAMPM(activeEvent.start_time)}`
