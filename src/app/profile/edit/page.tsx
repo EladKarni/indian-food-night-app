@@ -17,6 +17,7 @@ interface ProfileData {
   full_name: string;
   email: string;
   address: string;
+  venmo_username: string;
 }
 
 function EditProfilePageContent() {
@@ -28,6 +29,7 @@ function EditProfilePageContent() {
     full_name: "",
     email: "",
     address: "",
+    venmo_username: "",
   });
 
   useEffect(() => {
@@ -38,6 +40,7 @@ function EditProfilePageContent() {
       full_name: user.user_metadata?.full_name || "",
       email: user.email || "",
       address: "",
+      venmo_username: "",
     });
 
     // Fetch existing profile data
@@ -65,6 +68,7 @@ function EditProfilePageContent() {
           full_name: data.full_name || user.user_metadata?.full_name || "",
           email: data.email || user.email || "",
           address: data.address || "",
+          venmo_username: data.venmo_username || "",
         });
       }
     } catch (error) {
@@ -86,6 +90,7 @@ function EditProfilePageContent() {
           email: profile.email,
           full_name: profile.full_name,
           address: profile.address,
+          venmo_username: profile.venmo_username.trim().replace(/^@/, "") || null,
           updated_at: new Date().toISOString(),
         });
 
@@ -97,8 +102,15 @@ function EditProfilePageContent() {
 
       router.push("/dashboard");
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Failed to save profile. Please try again.");
+      const err = error as { message?: string; code?: string; details?: string; hint?: string };
+      console.error("Error saving profile:", {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        raw: error,
+      });
+      alert(`Failed to save profile: ${err?.message || "Unknown error"}`);
     } finally {
       setSaving(false);
     }
@@ -172,6 +184,27 @@ function EditProfilePageContent() {
                   placeholder="Enter your address"
                   rows={3}
                 />
+              </div>
+
+              {/* Venmo Username */}
+              <div>
+                <FormLabel>
+                  Venmo Username
+                </FormLabel>
+                <FormInput
+                  type="text"
+                  value={profile.venmo_username}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      venmo_username: e.target.value,
+                    }))
+                  }
+                  placeholder="your-venmo-handle"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  When you host, guests will see a pay link that opens Venmo.
+                </p>
               </div>
 
               {/* Action Buttons */}

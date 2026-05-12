@@ -5,6 +5,7 @@ import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
+import { useHostProfile } from "@/hooks/useHostProfile";
 import OrderListItem from "./orders/OrderListItem";
 import OrderListTotals from "./orders/OrderListTotals";
 import OrderListSkeleton from "./orders/OrderListSkeleton";
@@ -31,6 +32,7 @@ export const OrderList = ({
   const hookResult = useOrders(activeEvent?.id);
   const { user } = useAuth();
   const { guestName } = useGuestName();
+  const { hostProfile } = useHostProfile(activeEvent?.host_id || undefined);
 
   const orders = propOrders ?? hookResult.orders;
   const loading = propLoading ?? hookResult.loading;
@@ -212,6 +214,8 @@ export const OrderList = ({
           orders={filteredOrders}
           isHostView={isHostView}
           shouldShowAllOrders={shouldShowAllOrders}
+          hostVenmoUsername={hostProfile?.venmo_username || null}
+          hostName={hostProfile?.full_name || null}
         />
       )}
     </div>
