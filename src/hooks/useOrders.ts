@@ -1,196 +1,152 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tables, TablesInsert, TablesUpdate } from "@/types/supabase-types";
+import {
+  fetchOrdersByEvent,
+  type OrderRow,
+  type MenuItemRow,
+  type OrderWithMenuItem,
+} from "@/lib/queries/orders";
+import { orderKeys } from "@/lib/queries/keys";
+import type { TablesInsert, TablesUpdate } from "@/types/supabase-types";
 
-export type OrderRow = Tables<"orders">;
-export type MenuItemRow = Tables<"menu_items">;
-
-export interface OrderWithMenuItem extends OrderRow {
-  menu_items: MenuItemRow;
-}
-
+export type { OrderRow, MenuItemRow, OrderWithMenuItem };
 export type CreateOrderData = TablesInsert<"orders">;
 export type UpdateOrderData = TablesUpdate<"orders">;
 
 export const useOrders = (eventId?: string) => {
-  const [orders, setOrders] = useState<OrderWithMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const fetchOrders = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+  const {
+    data,
+    isPending,
+    error,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: orderKeys.list(eventId),
+    queryFn: () => fetchOrdersByEvent(eventId as string),
+    enabled: !!supabase && !!eventId,
+  });
 
-    try {
-      let query = supabase.from("orders").select(`
-          *,
-          menu_items (*)
-        `);
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: orderKeys.list(eventId) });
 
-      if (eventId) {
-        query = query.eq("event_id", eventId);
-      }
-
-      const { data, error } = await query.order("created_at", {
-        ascending: false,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setOrders(data || []);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch orders");
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  const addOrder = useCallback(
-    async (orderData: CreateOrderData, guestName?: string) => {
+  const addMutation = useMutation({
+    mutationFn: async (vars: {
+      orderData: CreateOrderData;
+      guestName?: string;
+    }) => {
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
-
-      // If no user is logged in, require guest name
-      if (!user && !guestName?.trim()) {
+      if (!user && !vars.guestName?.trim()) {
         throw new Error("Guest name is required when not logged in");
       }
+      const userName =
+        user?.user_metadata?.full_name || user?.email || vars.guestName;
 
-      setActionLoading(true);
-      try {
-        const userName = user?.user_metadata?.full_name || user?.email || guestName;
-        
-        const { data, error } = await supabase
-          .from("orders")
-          .insert({
-            ...orderData,
-            user_name: userName,
-            user_id: user?.id || null,
-          })
-          .select(
-            `
-          *,
-          menu_items (*)
-        `
-          )
-          .single();
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          ...vars.orderData,
+          user_name: userName,
+          user_id: user?.id || null,
+        })
+        .select("*, menu_items (*)")
+        .single();
 
-        if (error) {
-          throw error;
-        }
-
-        setOrders((prev) => [data, ...prev]);
-        return data;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to add order";
-        setError(errorMessage);
-        throw new Error(errorMessage);
-      } finally {
-        setActionLoading(false);
-      }
+      if (error) throw error;
+      return data as OrderWithMenuItem;
     },
-    [user]
-  );
+    onSuccess: invalidate,
+  });
 
-  const updateOrder = useCallback(
-    async (orderId: string, updates: UpdateOrderData) => {
+  const updateMutation = useMutation({
+    mutationFn: async (vars: {
+      orderId: string;
+      updates: UpdateOrderData;
+    }) => {
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
+      const { data, error } = await supabase
+        .from("orders")
+        .update(vars.updates)
+        .eq("id", vars.orderId)
+        .select("*, menu_items (*)")
+        .single();
 
-      setActionLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("orders")
-          .update(updates)
-          .eq("id", orderId)
-          .select(
-            `
-          *,
-          menu_items (*)
-        `
-          )
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        setOrders((prev) =>
-          prev.map((order) => (order.id === orderId ? data : order))
-        );
-        return data;
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to update order";
-        setError(errorMessage);
-        throw new Error(errorMessage);
-      } finally {
-        setActionLoading(false);
-      }
+      if (error) throw error;
+      return data as OrderWithMenuItem;
     },
-    []
-  );
+    onSuccess: invalidate,
+  });
 
-  const removeOrder = useCallback(async (orderId: string) => {
-    if (!supabase) {
-      throw new Error("Supabase client not available");
-    }
-
-    setActionLoading(true);
-    try {
+  const removeMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      if (!supabase) {
+        throw new Error("Supabase client not available");
+      }
       const { error } = await supabase
         .from("orders")
         .delete()
         .eq("id", orderId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 
-      setOrders((prev) => prev.filter((order) => order.id !== orderId));
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to remove order";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setActionLoading(false);
-    }
-  }, []);
+  const addOrder = useCallback(
+    (orderData: CreateOrderData, guestName?: string) =>
+      addMutation.mutateAsync({ orderData, guestName }),
+    [addMutation]
+  );
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const updateOrder = useCallback(
+    (orderId: string, updates: UpdateOrderData) =>
+      updateMutation.mutateAsync({ orderId, updates }),
+    [updateMutation]
+  );
+
+  const removeOrder = useCallback(
+    (orderId: string) => removeMutation.mutateAsync(orderId),
+    [removeMutation]
+  );
 
   const refetch = useCallback(async () => {
-    setLoading(true);
-    await fetchOrders();
-  }, [fetchOrders]);
+    await queryRefetch();
+  }, [queryRefetch]);
+
+  const mutationError =
+    addMutation.error || updateMutation.error || removeMutation.error;
 
   return {
-    orders,
-    loading,
-    actionLoading,
-    error,
+    orders: data ?? [],
+    loading: !eventId || isPending,
+    actionLoading:
+      addMutation.isPending ||
+      updateMutation.isPending ||
+      removeMutation.isPending,
+    error: error
+      ? error.message
+      : mutationError
+      ? mutationError.message
+      : null,
     addOrder,
     updateOrder,
     removeOrder,
-    clearError,
+    clearError: () => {
+      addMutation.reset();
+      updateMutation.reset();
+      removeMutation.reset();
+    },
     refetch,
   };
 };
