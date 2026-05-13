@@ -1,67 +1,113 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders } from "@/hooks/useOrders";
-import Link from "next/link";
-import EventStatusButton from "@/components/dashboard/EventStatusButton";
-import EditEventButton from "@/components/dashboard/EditEventButton";
-import DeleteEventButton from "@/components/dashboard/DeleteEventButton";
-import OverviewButton from "@/components/dashboard/OverviewButton";
+import { useDeleteEvent } from "@/hooks/useDeleteEvent";
+import { useDashboardActions } from "@/hooks/useDashboardActions";
+import ActionList from "@/components/dashboard/ActionList";
+import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
+import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
+import NextEventCard from "@/components/dashboard/NextEventCard";
+import EmptyEventCard from "@/components/dashboard/EmptyEventCard";
+import DeleteEventConfirm from "@/components/dashboard/DeleteEventConfirm";
+
+function getFirstName(
+  fullName: string | undefined,
+  email: string | undefined
+): string {
+  return (
+    fullName?.split(" ")[0] ||
+    email?.split("@")[0] ||
+    "there"
+  );
+}
 
 export default function DashboardContent() {
   const { user } = useAuth();
-  const { activeEvent, refreshActiveEvent } = useActiveEvent();
+  const { activeEvent } = useActiveEvent();
   const { orders } = useOrders(activeEvent?.id);
+  const {
+    deleteEvent,
+    loading: deleteLoading,
+    error: deleteError,
+    reset: resetDelete,
+  } = useDeleteEvent();
 
-  // Check if current user is the host of the active event
-  const isHost = user && activeEvent && activeEvent.host_id === user.id;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const isHost = !!user && !!activeEvent && activeEvent.host_id === user.id;
+
+  const firstName = useMemo(
+    () =>
+      getFirstName(
+        user?.user_metadata?.full_name as string | undefined,
+        user?.email
+      ),
+    [user]
+  );
+
+  const handleDeleteRequest = useCallback(() => setConfirmingDelete(true), []);
+
+  const actionRows = useDashboardActions({
+    activeEvent,
+    isHost,
+    orderCount: orders.length,
+    onDeleteRequest: handleDeleteRequest,
+  });
 
   if (!user) return null;
 
+  const handleDeleteConfirm = async () => {
+    if (!activeEvent) return;
+    try {
+      await deleteEvent(activeEvent.id, user.id);
+      setConfirmingDelete(false);
+    } catch {
+      // error surfaced via deleteError; keep the confirm open so the user sees it
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setConfirmingDelete(false);
+    resetDelete();
+  };
+
   return (
-    <>
-      <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-        <div className="w-full max-w-xs mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
-          {/* Header */}
-          <div className="bg-orange-400 text-center py-3 px-4 relative">
-            <h1 className="text-xs font-medium text-slate-700 leading-tight">
-              Welcome back, {user.user_metadata.full_name}!
-            </h1>
-          </div>
+    <main className="ifn-screen ifn-app">
+      <div style={{ maxWidth: 420, margin: "0 auto", width: "100%", flex: 1 }}>
+        <DashboardTopbar isHost={isHost} />
 
-          <div className="p-6">
-            {/* User Info */}
-            <div className="mb-8">
-              <div className="text-center">
-                <h2 className="text-lg font-bold text-slate-800 mb-4">
-                  Dashboard
-                </h2>
+        <div className="ifn-screen-pad" style={{ paddingTop: 12 }}>
+          <DashboardGreeting
+            firstName={firstName}
+            isHost={isHost}
+            hasEvent={!!activeEvent}
+          />
 
-                {/* Action Buttons */}
-                <div className="space-y-3 mb-6 flex flex-col items-center">
-                  <EventStatusButton event={activeEvent} />
-                  {isHost && activeEvent && <EditEventButton eventId={activeEvent.id} />}
-                  {isHost && activeEvent && <DeleteEventButton eventId={activeEvent.id} userId={user.id} onDeleted={refreshActiveEvent} />}
-                  {activeEvent && orders.length > 1 && <OverviewButton />}
-                  <Link
-                    href="/order-history"
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-                  >
-                    📜 Order History
-                  </Link>
-                  <Link
-                    href="/profile/edit"
-                    className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-                  >
-                    👤 Edit Profile
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
+          {activeEvent ? (
+            <NextEventCard
+              event={activeEvent}
+              orderCount={orders.length}
+              isHost={isHost}
+            />
+          ) : (
+            <EmptyEventCard />
+          )}
+
+          <ActionList rows={actionRows} />
+
+          {confirmingDelete && activeEvent && (
+            <DeleteEventConfirm
+              loading={deleteLoading}
+              error={deleteError}
+              onCancel={handleDeleteCancel}
+              onConfirm={handleDeleteConfirm}
+            />
+          )}
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

@@ -1,17 +1,22 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import EventInfo from "@/components/EventInfo";
+import { Suspense } from "react";
+import EventInfoOrderStrip from "@/components/EventInfoOrderStrip";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
+import PageSuspenseFallback from "@/components/PageSuspenseFallback";
 import { CutoffWarningBanner } from "@/components/CutoffWarningBanner";
 import { useOrders } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
 import { useHostProfile } from "@/hooks/useHostProfile";
+import { useFinalizeOrders } from "@/hooks/useFinalizeOrders";
 import { calculateCutoffStatus, formatCutoffTime } from "@/util/cutoffUtil";
-import Button from "@/ui/button";
+import OrderPageTopbar from "./OrderPageTopbar";
+import FinalizeOrderButton from "./FinalizeOrderButton";
+
+const DEFAULT_RESTAURANT = "Coriander Indian Grill";
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
@@ -21,98 +26,65 @@ function OrderPageContent() {
   const { user } = useAuth();
   const { guestName } = useGuestName();
   const { hostProfile } = useHostProfile(activeEvent?.host_id ?? undefined);
-  const [finalizing, setFinalizing] = useState(false);
 
   const cutoffStatus = calculateCutoffStatus(activeEvent);
-
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
   const userOrders = orders.filter(
     (order) => order.user_name === currentUserName
   );
 
-  // Check if all user orders are already submitted
-  const allOrdersSubmitted = userOrders.length > 0 && userOrders.every(order => order.is_submitted);
+  const { finalize, finalizing, allOrdersSubmitted } = useFinalizeOrders({
+    userOrders,
+    updateOrder,
+    onComplete: () => {
+      window.location.href = "/order-overview";
+    },
+  });
+
+  const restaurant = activeEvent?.restaurant || DEFAULT_RESTAURANT;
+
+  function renderCutoffBanner() {
+    if (!cutoffStatus?.isPastCutoff || !cutoffStatus.cutoffDateTime) {
+      return null;
+    }
+    return (
+      <CutoffWarningBanner
+        hostName={hostProfile?.full_name || hostProfile?.email || "the host"}
+        cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
+      />
+    );
+  }
+
+  function renderFinalizeArea() {
+    if (loading) {
+      return (
+        <div style={{ marginTop: 16 }}>
+          <div className="ifn-skel" style={{ height: 48, borderRadius: 14 }} />
+        </div>
+      );
+    }
+    if (userOrders.length === 0) return null;
+    return (
+      <FinalizeOrderButton
+        finalizing={finalizing}
+        allOrdersSubmitted={allOrdersSubmitted}
+        onClick={finalize}
+      />
+    );
+  }
 
   return (
-    <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-      <div className="w-full max-w-md mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="bg-orange-400 text-center py-3 px-4 relative">
-          <h1 className="text-xs font-medium text-slate-700 leading-tight">
-            Place Your Order
-          </h1>
-        </div>
+    <main className="ifn-screen ifn-app">
+      <div className="ifn-page-shell">
+        <OrderPageTopbar restaurant={restaurant} />
 
-        <div className="p-6 space-y-6">
-          {/* User Info */}
-          <EventInfo className="mb-8" />
-
-          {/* Cutoff Warning Banner */}
-          {cutoffStatus?.isPastCutoff && cutoffStatus.cutoffDateTime && (
-            <CutoffWarningBanner
-              hostName={hostProfile?.full_name || hostProfile?.email || "the host"}
-              cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
-            />
-          )}
-
-          {/* Order Section */}
-          <div>
-            <OrderItem onOrderAdded={refetch} />
-          </div>
-
-          {/* Order List */}
-          <div>
-            <OrderList
-              orders={orders}
-              loading={loading}
-              error={error}
-            />
-          </div>
-
-          {/* Order Overview Button - Reserve space while loading to prevent layout shift */}
-          {loading ? (
-            <div className="pt-4 border-t border-slate-400/20 space-y-3">
-              <div className="skeleton h-12 w-full rounded-2xl bg-slate-300/60" />
-            </div>
-          ) : userOrders.length > 0 ? (
-            <div className="pt-4 border-t border-slate-400/20 space-y-3">
-              <Button
-                fullWidth={true}
-                variant="primary"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={finalizing}
-                onClick={async () => {
-                  if (allOrdersSubmitted) {
-                    // If all orders are already submitted, just navigate to overview
-                    window.location.href = "/order-overview";
-                  } else {
-                    setFinalizing(true);
-                    try {
-                      // Mark all user's orders as submitted
-                      const updatePromises = userOrders.map((order) =>
-                        updateOrder(order.id, { is_submitted: true })
-                      );
-                      await Promise.all(updatePromises);
-
-                      // Navigate to overview page
-                      window.location.href = "/order-overview";
-                    } catch (error) {
-                      console.error("Failed to finalize orders:", error);
-                      alert("Failed to finalize orders. Please try again.");
-                      setFinalizing(false);
-                    }
-                  }
-                }}
-              >
-                {finalizing
-                  ? "Finalizing..."
-                  : allOrdersSubmitted
-                    ? "Order Overview"
-                    : "Finalize Order"}
-              </Button>
-            </div>
-          ) : null}
+        <div className="ifn-screen-pad" style={{ paddingTop: 4 }}>
+          <EventInfoOrderStrip />
+          {renderCutoffBanner()}
+          <OrderItem onOrderAdded={refetch} />
+          <OrderList orders={orders} loading={loading} error={error} />
+          {renderFinalizeArea()}
         </div>
       </div>
     </main>
@@ -121,18 +93,7 @@ function OrderPageContent() {
 
 export default function OrderPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-          <div className="w-full max-w-md mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-6 text-center">
-              <div className="loading loading-spinner loading-md mb-4"></div>
-              <p className="text-slate-700">Loading...</p>
-            </div>
-          </div>
-        </main>
-      }
-    >
+    <Suspense fallback={<PageSuspenseFallback />}>
       <OrderPageContent />
     </Suspense>
   );

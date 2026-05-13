@@ -1,268 +1,101 @@
 "use client";
 
-import { Suspense, useMemo, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
-import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
+import { useOrders } from "@/hooks/useOrders";
+import { useGroupedSubmittedOrders } from "@/hooks/useGroupedSubmittedOrders";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PageContainer from "@/ui/PageContainer";
-import Card from "@/ui/Card";
-import LoadingSpinner from "@/ui/LoadingSpinner";
-import AlertMessage from "@/ui/AlertMessage";
+import PageSuspenseFallback from "@/components/PageSuspenseFallback";
+import OrderModeTopbar from "./OrderModeTopbar";
+import RestaurantCallout from "./RestaurantCallout";
+import GroupedOrderRow from "./GroupedOrderRow";
+import OrderModeTotals from "./OrderModeTotals";
+import OrderModeFooter from "./OrderModeFooter";
+import LargePartyHint from "./LargePartyHint";
 
-interface GroupedOrder {
-  item_name: string;
-  price: number;
-  spice_levels: { [key: string]: number }; // spice level -> count
-  total_quantity: number;
-  total_cost: number;
-  indian_hot_count: number;
-}
+const DEFAULT_RESTAURANT = "Coriander Grill";
+const RESTAURANT_PHONE = "(415) 555-0142";
+const LARGE_PARTY_THRESHOLD = 2;
 
 function OrderModePageContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { activeEvent } = useActiveEvent();
   const { orders, loading, error } = useOrders(activeEvent?.id);
+  const { groupedOrders, submittedOrders, uniqueUsers, subtotal, tax, total } =
+    useGroupedSubmittedOrders(orders);
 
-  // Check if current user is the host
-  const isHost = user && activeEvent && activeEvent.host_id === user.id;
+  const isHost = !!user && !!activeEvent && activeEvent.host_id === user.id;
 
-  // Filter orders to only include submitted ones
-  const submittedOrders = useMemo(() => {
-    return orders.filter(order => order.is_submitted);
-  }, [orders]);
-
-  // Group orders by menu item
-  const groupedOrders = useMemo(() => {
-    const groups: { [key: string]: GroupedOrder } = {};
-
-    submittedOrders.forEach((order: OrderWithMenuItem) => {
-      const itemName = order.menu_items.name;
-      const spiceLevel = order.spice_level?.toString() || "0";
-      
-      if (!groups[itemName]) {
-        groups[itemName] = {
-          item_name: itemName,
-          price: order.menu_items.price,
-          spice_levels: {},
-          total_quantity: 0,
-          total_cost: 0,
-          indian_hot_count: 0,
-        };
-      }
-
-      // Count spice levels
-      groups[itemName].spice_levels[spiceLevel] = (groups[itemName].spice_levels[spiceLevel] || 0) + 1;
-      
-      // Update totals
-      groups[itemName].total_quantity += 1;
-      groups[itemName].total_cost += order.menu_items.price;
-      
-      // Count indian hot
-      if (order.is_indian_hot) {
-        groups[itemName].indian_hot_count += 1;
-      }
-    });
-
-    return Object.values(groups).sort((a, b) => a.item_name.localeCompare(b.item_name));
-  }, [submittedOrders]);
-
-
-  // Get unique user count for extra rice reminder
-  const uniqueUsers = useMemo(() => {
-    const userNames = new Set(submittedOrders.map(order => order.user_name));
-    return userNames.size;
-  }, [submittedOrders]);
-
-  // Redirect non-hosts using useEffect
   useEffect(() => {
     if (!isHost && activeEvent) {
       router.push("/order-overview");
     }
   }, [isHost, activeEvent, router]);
 
-  // Don't render if not host
   if (!isHost) {
     return null;
   }
 
-  if (loading) {
+  const restaurant = activeEvent?.restaurant || DEFAULT_RESTAURANT;
+  const showLargePartyHint = uniqueUsers > LARGE_PARTY_THRESHOLD;
+
+  function renderOrdersList() {
+    if (groupedOrders.length === 0) {
+      return (
+        <div className="ifn-empty ifn-empty--lg">No submitted orders yet.</div>
+      );
+    }
     return (
-      <PageContainer variant="gradient">
-        <Card variant="auth" className="w-full max-w-lg">
-          <div className="p-6 text-center">
-            <LoadingSpinner size="lg" text="Loading orders..." />
-          </div>
-        </Card>
-      </PageContainer>
+      <>
+        {groupedOrders.map((group) => (
+          <GroupedOrderRow key={group.item_name} group={group} />
+        ))}
+        <OrderModeTotals
+          itemCount={submittedOrders.length}
+          subtotal={subtotal}
+          tax={tax}
+          total={total}
+        />
+      </>
     );
   }
 
-  if (error) {
+  function renderBody() {
+    if (loading) {
+      return <div className="ifn-empty ifn-empty--lg">Loading orders…</div>;
+    }
+    if (error) {
+      return <div className="ifn-empty ifn-empty--error">{error}</div>;
+    }
     return (
-      <PageContainer variant="gradient">
-        <Card variant="auth" className="w-full max-w-lg">
-          <div className="p-6 text-center">
-            <AlertMessage type="error" className="mb-4">
-              Error loading orders: {error}
-            </AlertMessage>
-            <Button onClick={() => router.push("/order-overview")}>Back to Overview</Button>
-          </div>
-        </Card>
-      </PageContainer>
+      <>
+        <RestaurantCallout restaurant={restaurant} phone={RESTAURANT_PHONE} />
+        {showLargePartyHint && <LargePartyHint uniqueUsers={uniqueUsers} />}
+        {renderOrdersList()}
+        <OrderModeFooter />
+      </>
     );
   }
 
   return (
-    <PageContainer variant="gradient">
-      <Card variant="auth" className="w-full max-w-lg">
-        {/* Header */}
-        <div className="bg-green-500 p-4 flex items-center relative">
-          <h1 className="text-lg font-semibold text-white flex-1 text-center">
-            📞 Order Mode
-          </h1>
+    <main className="ifn-screen ifn-app">
+      <div className="ifn-page-shell">
+        <OrderModeTopbar />
+        <div className="ifn-screen-pad" style={{ paddingTop: 4 }}>
+          {renderBody()}
         </div>
-
-        <div className="p-6 space-y-4">
-          {/* Instructions */}
-          <AlertMessage type="success" className="mb-4">
-            📋 Ready to call in orders! Items are grouped by dish for easy
-            ordering.
-          </AlertMessage>
-
-          {/* Extra Rice Reminder */}
-          {uniqueUsers > 2 && (
-            <AlertMessage type="warning" className="mb-4">
-              🍚 Reminder: With {uniqueUsers} people ordering, consider asking
-              for extra rice!
-            </AlertMessage>
-          )}
-
-          {groupedOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-600 text-sm">
-                No orders found for this event.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Grouped Orders */}
-              <div className="space-y-3 overflow-y-auto">
-                {groupedOrders.map((group) => (
-                  <div
-                    key={group.item_name}
-                    className="bg-white rounded-2xl p-4 shadow-md"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-slate-800 text-sm flex-1">
-                        {group.item_name}
-                      </h3>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">
-                          {group.total_quantity}x
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Spice Level Breakdown */}
-                    <div className="text-xs text-slate-600 space-y-1">
-                      {Object.entries(group.spice_levels)
-                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                        .map(([spiceLevel, count]) => {
-                          // For spice level 10, we need to handle Indian Hot separately
-                          if (spiceLevel === "10") {
-                            const regularLevel10 = count - group.indian_hot_count;
-                            return (
-                              <div key={spiceLevel}>
-                                {/* Show regular spice level 10 if any */}
-                                {regularLevel10 > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Spice Level 10:</span>
-                                    <span className="font-medium">{regularLevel10}x</span>
-                                  </div>
-                                )}
-                                {/* Show Indian Hot */}
-                                {group.indian_hot_count > 0 && (
-                                  <div className="flex justify-between text-red-600 font-medium">
-                                    <span>Indian Hot 🌶️:</span>
-                                    <span>{group.indian_hot_count}x</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                          
-                          // For all other spice levels, show normally
-                          return (
-                            <div
-                              key={spiceLevel}
-                              className="flex justify-between"
-                            >
-                              <span>Spice Level {spiceLevel}:</span>
-                              <span className="font-medium">{count}x</span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Order Summary */}
-              <div className="mt-6 pt-4 border-t border-slate-300">
-                <div className="bg-white rounded-2xl p-4 shadow-md">
-                  <div className="text-center">
-                    <span className="text-slate-800 font-bold text-lg">
-                      Total Items: {submittedOrders.length}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Action Buttons */}
-          <div className="space-y-3 pt-4">
-            <Button
-              fullWidth={true}
-              variant="primary"
-              onClick={() => router.push("/order-overview")}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              Back to Overview
-            </Button>
-            <Button
-              fullWidth={true}
-              variant="secondary"
-              onClick={() => router.push("/dashboard")}
-              className="bg-slate-600 hover:bg-slate-700"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </PageContainer>
+      </div>
+    </main>
   );
 }
 
 export default function OrderModePage() {
   return (
     <ProtectedRoute>
-      <Suspense
-        fallback={
-          <PageContainer variant="gradient">
-            <Card variant="auth" className="w-full max-w-lg">
-              <div className="p-6 text-center">
-                <LoadingSpinner size="lg" text="Loading..." />
-              </div>
-            </Card>
-          </PageContainer>
-        }
-      >
+      <Suspense fallback={<PageSuspenseFallback />}>
         <OrderModePageContent />
       </Suspense>
     </ProtectedRoute>

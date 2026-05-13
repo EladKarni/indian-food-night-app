@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { TablesUpdate } from "@/types/supabase-types";
+import type { TablesInsert, TablesUpdate } from "@/types/supabase-types";
 
 /**
  * Checks if there are any upcoming events in the database
@@ -24,6 +24,33 @@ export async function checkForEvents() {
   } catch (error) {
     console.error("Error checking for events:", error);
     return false;
+  }
+}
+
+/**
+ * Creates a new event with the current user as host.
+ */
+export async function createEvent(input: TablesInsert<"events">) {
+  if (!supabase) throw new Error("Supabase client not available");
+
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .insert(input)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create event: ${error.message}`);
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating event:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to create event",
+    };
   }
 }
 
