@@ -28,6 +28,11 @@
   --ifn-pill-chili-bg: #FBEAE6;
   --ifn-pill-chili-ink: var(--ifn-chili);
 
+  /* Always-dark contrast surface (theme-stable; same in light and dark) */
+  --ifn-contrast-surface: #1A1714;
+  --ifn-contrast-ink: #F4EEE3;
+  --ifn-contrast-ink-muted: #8E8678;
+
   --ifn-display: var(--font-ifn-display), 'Instrument Serif', Georgia, serif;
   --ifn-ui: var(--font-ifn-ui), ui-sans-serif, -apple-system, system-ui, sans-serif;
   --ifn-mono: var(--font-ifn-mono), ui-monospace, 'SF Mono', Menlo, monospace;
@@ -54,6 +59,11 @@
   --ifn-pill-green-ink: #7CCBA4;
   --ifn-pill-chili-bg: #33180F;
   --ifn-pill-chili-ink: #F0806E;
+
+  /* Contrast surface stays dark regardless of theme — see :root for rationale */
+  --ifn-contrast-surface: #1A1714;
+  --ifn-contrast-ink: #F4EEE3;
+  --ifn-contrast-ink-muted: #8E8678;
 
   color-scheme: dark;
 }
@@ -107,7 +117,7 @@
   box-shadow: inset 0 0 0 1px var(--ifn-border-strong);
 }
 .ifn-btn--ink {
-  background: var(--ifn-ink); color: #fff;
+  background: var(--ifn-contrast-surface); color: var(--ifn-contrast-ink);
 }
 .ifn-btn--soft {
   background: var(--ifn-surface-2); color: var(--ifn-ink);
@@ -156,13 +166,16 @@
 .ifn-spice-track {
   position: relative; height: 6px; border-radius: 100px;
   background: var(--ifn-border);
-  overflow: hidden;
 }
 .ifn-spice-fill {
   position: absolute; top: 0; left: 0; height: 100%;
   background: linear-gradient(90deg, #F2A93B 0%, #E47A2A 50%, var(--ifn-chili) 100%);
   border-radius: 100px;
   transition: width .15s ease;
+  pointer-events: none;
+}
+.ifn-spice-thumb {
+  pointer-events: none;
 }
 .ifn-spice-thumb {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
@@ -387,11 +400,11 @@ button.ifn-pill { border: 0; cursor: pointer; }
 
 /* Dark card variant (e.g. host running-total card) */
 .ifn-card--dark {
-  background: var(--ifn-ink);
-  color: #fff;
+  background: var(--ifn-contrast-surface);
+  color: var(--ifn-contrast-ink);
   border-color: transparent;
 }
-.ifn-eyebrow--on-dark { color: var(--ifn-subtle); }
+.ifn-eyebrow--on-dark { color: var(--ifn-contrast-ink-muted); }
 
 /* Order list row — used by OrderListItem */
 .ifn-order-row {
