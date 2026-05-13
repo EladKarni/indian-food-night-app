@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Geist, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MenuProvider } from "@/contexts/MenuContext";
@@ -29,6 +29,33 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Indian Food Night",
   description: "An app to organize Indian food nights with friends.",
+  applicationName: "Indian Food Night",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "IFN",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF6F0" },
+    { media: "(prefers-color-scheme: dark)", color: "#14110E" },
+  ],
 };
 
 export default function RootLayout({
@@ -44,6 +71,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
         <script
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
         />

@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 /* ──────────────────────────────────────────────────────────────
+ * Native-feel mobile defaults
+ * ────────────────────────────────────────────────────────────── */
+html { overscroll-behavior-y: none; }
+body { -webkit-tap-highlight-color: transparent; }
+
+/* ──────────────────────────────────────────────────────────────
  * Indian Food Night — design tokens
  * ────────────────────────────────────────────────────────────── */
 :root,
@@ -217,8 +223,10 @@
 /* Screen scaffold */
 .ifn-screen {
   background: var(--ifn-bg);
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .ifn-screen-pad { padding: 16px 20px 28px; }
 
