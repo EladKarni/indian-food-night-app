@@ -1,6 +1,13 @@
 import { useRef } from "react";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 
+const SearchIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="11" cy="11" r="6.5" stroke="var(--ifn-muted)" strokeWidth="1.6" />
+    <path d="M16 16l4 4" stroke="var(--ifn-muted)" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
 interface AutocompleteInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -20,11 +27,11 @@ const AutocompleteInput = ({
   onItemSelect,
   onEnterPressed,
   items,
-  placeholder = "Start typing...",
+  placeholder = "Start typing…",
   disabled = false,
   isLoading = false,
   error,
-  inputRef: externalRef
+  inputRef: externalRef,
 }: AutocompleteInputProps) => {
   const internalRef = useRef<HTMLInputElement>(null);
   const inputRef = externalRef || internalRef;
@@ -54,18 +61,29 @@ const AutocompleteInput = ({
   };
 
   const handleInputBlur = () => {
-    // Delay hiding suggestions to allow clicking on them
     setTimeout(() => setShowSuggestions(false), 150);
   };
 
-  const displayPlaceholder = isLoading 
-    ? "Loading menu..." 
-    : error 
+  const displayPlaceholder = isLoading
+    ? "Loading menu…"
+    : error
     ? "Error loading menu"
     : placeholder;
 
   return (
-    <div className="relative">
+    <div style={{ position: "relative" }}>
+      <span
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "var(--ifn-muted)",
+          pointerEvents: "none",
+        }}
+      >
+        <SearchIcon />
+      </span>
       <input
         ref={inputRef}
         type="text"
@@ -74,61 +92,86 @@ const AutocompleteInput = ({
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
         onKeyDown={(e) => {
-          // Handle autocomplete navigation first
           const hadSuggestions = showSuggestions && filteredItems.length > 0;
           const hadSelection = selectedIndex >= 0;
-          
+
           handleKeyDown(e, onItemSelect);
-          
-          // If Enter was pressed and either no suggestions were shown or no item was selected
+
           if (e.key === "Enter" && (!hadSuggestions || !hadSelection)) {
             e.preventDefault();
             onEnterPressed?.();
           }
         }}
         placeholder={displayPlaceholder}
-        className="bg-white text-slate-800 text-sm font-medium px-3 py-1.5 pr-9 rounded-xl border-none outline-none w-full disabled:bg-gray-100 disabled:cursor-not-allowed"
+        className="ifn-input"
+        style={{ paddingLeft: 38 }}
         disabled={disabled}
       />
-      
-      <div
-        className={`absolute right-2 top-1/2 transform -translate-y-1/2 transition-transform ${
-          disabled
-            ? "cursor-not-allowed opacity-50"
-            : "cursor-pointer hover:scale-110"
-        }`}
-        onClick={() => console.log("duplicate")}
-        title={disabled ? "Menu loading..." : "Duplicate this item"}
-      >
-        {/* Icon placeholder - could use the Icon component here */}
-      </div>
 
-      {/* Autocomplete Dropdown */}
       {!disabled && showSuggestions && filteredItems.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 10,
+            width: "100%",
+            marginTop: 4,
+            background: "var(--ifn-surface)",
+            border: "1px solid var(--ifn-border)",
+            borderRadius: 12,
+            boxShadow: "0 8px 24px -8px rgba(26, 23, 20, 0.18)",
+            maxHeight: 240,
+            overflowY: "auto",
+            padding: 4,
+          }}
+        >
           {filteredItems.map((item, index) => (
             <div
               key={item.id}
-              className={`px-3 py-2 cursor-pointer text-sm ${
-                index === selectedIndex
-                  ? "bg-orange-100 text-orange-800"
-                  : "text-slate-700 hover:bg-slate-50"
-              }`}
+              className="ifn-row-tap"
               onClick={() => selectItem(item, onItemSelect)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 8,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                background:
+                  index === selectedIndex
+                    ? "var(--ifn-surface-2)"
+                    : "transparent",
+              }}
             >
-              <div className="flex justify-between items-center">
-                <span className="font-medium">{item.name}</span>
-                <span className="text-xs text-slate-500">${item.price}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{item.name}</div>
+              </div>
+              <div
+                className="ifn-num"
+                style={{ fontSize: 13, color: "var(--ifn-muted)" }}
+              >
+                ${item.price}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Show error message if menu failed to load */}
       {error && (
-        <div className="absolute z-10 w-full mt-1 bg-red-50 border border-red-200 rounded-lg p-2">
-          <div className="text-xs text-red-600">{error}</div>
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 10,
+            width: "100%",
+            marginTop: 4,
+            background: "#FBEAE6",
+            border: "1px solid #F1B7AD",
+            borderRadius: 12,
+            padding: 8,
+            fontSize: 12,
+            color: "var(--ifn-chili)",
+          }}
+        >
+          {error}
         </div>
       )}
     </div>

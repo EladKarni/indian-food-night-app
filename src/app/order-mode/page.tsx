@@ -2,20 +2,42 @@
 
 import { Suspense, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/ui/button";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders, OrderWithMenuItem } from "@/hooks/useOrders";
+import { useHostProfile } from "@/hooks/useHostProfile";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PageContainer from "@/ui/PageContainer";
-import Card from "@/ui/Card";
-import LoadingSpinner from "@/ui/LoadingSpinner";
-import AlertMessage from "@/ui/AlertMessage";
+import SpiceDots from "@/ui/SpiceDots";
+
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M15 6l-6 6 6 6"
+      stroke="var(--ifn-ink-2)"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const PhoneIcon = (props: { color?: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M5 5.5C5 4.7 5.7 4 6.5 4h2c.8 0 1.5.7 1.5 1.5 0 1.3.2 2.5.6 3.6.2.5 0 1.1-.4 1.5l-1.4 1.4a14 14 0 006.3 6.3l1.4-1.4c.4-.4 1-.6 1.5-.4 1.1.4 2.3.6 3.6.6.8 0 1.5.7 1.5 1.5v2c0 .8-.7 1.5-1.5 1.5C11.5 22 2 12.5 2 6.5 2 5.7 2.7 5 3.5 5H5"
+      stroke={props.color || "#fff"}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 interface GroupedOrder {
   item_name: string;
   price: number;
-  spice_levels: { [key: string]: number }; // spice level -> count
+  spice_levels: { [key: string]: number };
   total_quantity: number;
   total_cost: number;
   indian_hot_count: number;
@@ -26,23 +48,20 @@ function OrderModePageContent() {
   const { user } = useAuth();
   const { activeEvent } = useActiveEvent();
   const { orders, loading, error } = useOrders(activeEvent?.id);
+  const { hostProfile } = useHostProfile(activeEvent?.host_id ?? undefined);
 
-  // Check if current user is the host
-  const isHost = user && activeEvent && activeEvent.host_id === user.id;
+  const isHost = !!user && !!activeEvent && activeEvent.host_id === user.id;
 
-  // Filter orders to only include submitted ones
-  const submittedOrders = useMemo(() => {
-    return orders.filter(order => order.is_submitted);
-  }, [orders]);
+  const submittedOrders = useMemo(
+    () => orders.filter((order) => order.is_submitted),
+    [orders]
+  );
 
-  // Group orders by menu item
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: GroupedOrder } = {};
-
     submittedOrders.forEach((order: OrderWithMenuItem) => {
       const itemName = order.menu_items.name;
       const spiceLevel = order.spice_level?.toString() || "0";
-      
       if (!groups[itemName]) {
         groups[itemName] = {
           item_name: itemName,
@@ -53,199 +72,381 @@ function OrderModePageContent() {
           indian_hot_count: 0,
         };
       }
-
-      // Count spice levels
-      groups[itemName].spice_levels[spiceLevel] = (groups[itemName].spice_levels[spiceLevel] || 0) + 1;
-      
-      // Update totals
+      groups[itemName].spice_levels[spiceLevel] =
+        (groups[itemName].spice_levels[spiceLevel] || 0) + 1;
       groups[itemName].total_quantity += 1;
       groups[itemName].total_cost += order.menu_items.price;
-      
-      // Count indian hot
       if (order.is_indian_hot) {
         groups[itemName].indian_hot_count += 1;
       }
     });
-
-    return Object.values(groups).sort((a, b) => a.item_name.localeCompare(b.item_name));
+    return Object.values(groups).sort((a, b) =>
+      a.item_name.localeCompare(b.item_name)
+    );
   }, [submittedOrders]);
 
-
-  // Get unique user count for extra rice reminder
   const uniqueUsers = useMemo(() => {
-    const userNames = new Set(submittedOrders.map(order => order.user_name));
+    const userNames = new Set(submittedOrders.map((o) => o.user_name));
     return userNames.size;
   }, [submittedOrders]);
 
-  // Redirect non-hosts using useEffect
   useEffect(() => {
     if (!isHost && activeEvent) {
       router.push("/order-overview");
     }
   }, [isHost, activeEvent, router]);
 
-  // Don't render if not host
   if (!isHost) {
     return null;
   }
 
-  if (loading) {
-    return (
-      <PageContainer variant="gradient">
-        <Card variant="auth" className="w-full max-w-lg">
-          <div className="p-6 text-center">
-            <LoadingSpinner size="lg" text="Loading orders..." />
-          </div>
-        </Card>
-      </PageContainer>
-    );
-  }
+  const sub = submittedOrders.reduce((s, o) => s + o.menu_items.price, 0);
+  const tax = sub * 0.07;
+  const total = sub + tax;
 
-  if (error) {
-    return (
-      <PageContainer variant="gradient">
-        <Card variant="auth" className="w-full max-w-lg">
-          <div className="p-6 text-center">
-            <AlertMessage type="error" className="mb-4">
-              Error loading orders: {error}
-            </AlertMessage>
-            <Button onClick={() => router.push("/order-overview")}>Back to Overview</Button>
-          </div>
-        </Card>
-      </PageContainer>
-    );
-  }
+  const restaurant = activeEvent?.restaurant || "Coriander Grill";
+  const phone = "(415) 555-0142";
 
   return (
-    <PageContainer variant="gradient">
-      <Card variant="auth" className="w-full max-w-lg">
-        {/* Header */}
-        <div className="bg-green-500 p-4 flex items-center relative">
-          <h1 className="text-lg font-semibold text-white flex-1 text-center">
-            📞 Order Mode
-          </h1>
+    <main className="ifn-screen ifn-app">
+      <div style={{ maxWidth: 420, margin: "0 auto", width: "100%", flex: 1 }}>
+        <div className="ifn-topbar">
+          <button
+            type="button"
+            onClick={() => router.push("/order-overview")}
+            className="ifn-topbar-btn"
+            style={{ cursor: "pointer" }}
+          >
+            <BackIcon />
+          </button>
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <div
+              className="ifn-eyebrow"
+              style={{ fontSize: 10, marginBottom: 2 }}
+            >
+              On the phone
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Order script
+            </div>
+          </div>
+          <span style={{ width: 38, height: 38 }} />
         </div>
 
-        <div className="p-6 space-y-4">
-          {/* Instructions */}
-          <AlertMessage type="success" className="mb-4">
-            📋 Ready to call in orders! Items are grouped by dish for easy
-            ordering.
-          </AlertMessage>
-
-          {/* Extra Rice Reminder */}
-          {uniqueUsers > 2 && (
-            <AlertMessage type="warning" className="mb-4">
-              🍚 Reminder: With {uniqueUsers} people ordering, consider asking
-              for extra rice!
-            </AlertMessage>
-          )}
-
-          {groupedOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-600 text-sm">
-                No orders found for this event.
-              </p>
+        <div className="ifn-screen-pad" style={{ paddingTop: 4 }}>
+          {loading ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "32px 0",
+                color: "var(--ifn-muted)",
+                fontSize: 13,
+              }}
+            >
+              Loading orders…
+            </div>
+          ) : error ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "16px 0",
+                color: "var(--ifn-chili)",
+                fontSize: 13,
+              }}
+            >
+              {error}
             </div>
           ) : (
             <>
-              {/* Grouped Orders */}
-              <div className="space-y-3 overflow-y-auto">
-                {groupedOrders.map((group) => (
+              {/* Phone callout */}
+              <div
+                className="ifn-card"
+                style={{
+                  padding: 14,
+                  marginBottom: 16,
+                  background: "var(--ifn-primary-soft)",
+                  borderColor: "transparent",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
                   <div
-                    key={group.item_name}
-                    className="bg-white rounded-2xl p-4 shadow-md"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: "var(--ifn-primary)",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-slate-800 text-sm flex-1">
-                        {group.item_name}
-                      </h3>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">
-                          {group.total_quantity}x
-                        </div>
-                      </div>
+                    <PhoneIcon />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 13.5,
+                        fontWeight: 500,
+                        color: "var(--ifn-ink)",
+                      }}
+                    >
+                      {restaurant}
                     </div>
-
-                    {/* Spice Level Breakdown */}
-                    <div className="text-xs text-slate-600 space-y-1">
-                      {Object.entries(group.spice_levels)
-                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                        .map(([spiceLevel, count]) => {
-                          // For spice level 10, we need to handle Indian Hot separately
-                          if (spiceLevel === "10") {
-                            const regularLevel10 = count - group.indian_hot_count;
-                            return (
-                              <div key={spiceLevel}>
-                                {/* Show regular spice level 10 if any */}
-                                {regularLevel10 > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Spice Level 10:</span>
-                                    <span className="font-medium">{regularLevel10}x</span>
-                                  </div>
-                                )}
-                                {/* Show Indian Hot */}
-                                {group.indian_hot_count > 0 && (
-                                  <div className="flex justify-between text-red-600 font-medium">
-                                    <span>Indian Hot 🌶️:</span>
-                                    <span>{group.indian_hot_count}x</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                          
-                          // For all other spice levels, show normally
-                          return (
-                            <div
-                              key={spiceLevel}
-                              className="flex justify-between"
-                            >
-                              <span>Spice Level {spiceLevel}:</span>
-                              <span className="font-medium">{count}x</span>
-                            </div>
-                          );
-                        })}
+                    <div
+                      className="ifn-num"
+                      style={{ fontSize: 12, color: "var(--ifn-ink-2)" }}
+                    >
+                      {phone}
                     </div>
                   </div>
-                ))}
+                  <a
+                    href={`tel:${phone.replace(/[^0-9]/g, "")}`}
+                    className="ifn-btn ifn-btn--primary"
+                    style={{
+                      padding: "8px 14px",
+                      fontSize: 13,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Call
+                  </a>
+                </div>
               </div>
 
-              {/* Order Summary */}
-              <div className="mt-6 pt-4 border-t border-slate-300">
-                <div className="bg-white rounded-2xl p-4 shadow-md">
-                  <div className="text-center">
-                    <span className="text-slate-800 font-bold text-lg">
-                      Total Items: {submittedOrders.length}
-                    </span>
-                  </div>
+              {uniqueUsers > 2 && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    background: "var(--ifn-surface-2)",
+                    marginBottom: 16,
+                    fontSize: 12.5,
+                    color: "var(--ifn-ink-2)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "var(--ifn-amber)",
+                    }}
+                  />
+                  {uniqueUsers} people tonight — ask for an extra side of rice.
                 </div>
+              )}
+
+              {groupedOrders.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "32px 0",
+                    color: "var(--ifn-muted)",
+                    fontSize: 13,
+                  }}
+                >
+                  No submitted orders yet.
+                </div>
+              ) : (
+                <>
+                  {groupedOrders.map((g) => {
+                    const spices = Object.entries(g.spice_levels)
+                      .map(([lvl, count]) => ({
+                        lvl: parseInt(lvl, 10),
+                        count,
+                      }))
+                      .filter((s) => s.lvl > 0)
+                      .sort((a, b) => a.lvl - b.lvl);
+                    return (
+                      <div
+                        key={g.item_name}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 0",
+                          borderBottom: "1px solid var(--ifn-border)",
+                        }}
+                      >
+                        <div
+                          className="ifn-num ifn-display"
+                          style={{
+                            fontSize: 32,
+                            width: 44,
+                            color: "var(--ifn-primary)",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {g.total_quantity}
+                          <span
+                            style={{
+                              fontSize: 14,
+                              color: "var(--ifn-muted)",
+                            }}
+                          >
+                            ×
+                          </span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 500 }}>
+                            {g.item_name}
+                          </div>
+                          {(spices.length > 0 || g.indian_hot_count > 0) && (
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "var(--ifn-muted)",
+                                marginTop: 4,
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 8,
+                              }}
+                            >
+                              {spices.map((s) => {
+                                // If this is level 10, subtract Indian-hot count
+                                const visibleCount =
+                                  s.lvl === 10
+                                    ? s.count - g.indian_hot_count
+                                    : s.count;
+                                if (visibleCount <= 0) return null;
+                                return (
+                                  <span
+                                    key={s.lvl}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                    }}
+                                  >
+                                    <SpiceDots level={s.lvl} />
+                                    <span>
+                                      {visibleCount}× lvl {s.lvl}
+                                    </span>
+                                  </span>
+                                );
+                              })}
+                              {g.indian_hot_count > 0 && (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    color: "var(--ifn-chili)",
+                                  }}
+                                >
+                                  <SpiceDots level={10} />
+                                  <span>
+                                    {g.indian_hot_count}× Indian hot
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="ifn-num"
+                          style={{ fontSize: 13, color: "var(--ifn-muted)" }}
+                        >
+                          ${(g.price * g.total_quantity).toFixed(2)}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div
+                    className="ifn-num"
+                    style={{
+                      marginTop: 16,
+                      fontSize: 13,
+                      color: "var(--ifn-muted)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Subtotal · {submittedOrders.length} items</span>
+                      <span>${sub.toFixed(2)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Tax (7%)</span>
+                      <span>${tax.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div
+                    className="ifn-display ifn-num"
+                    style={{
+                      marginTop: 12,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--ifn-border)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <span style={{ fontSize: 18, color: "var(--ifn-ink-2)" }}>
+                      Total
+                    </span>
+                    <span style={{ fontSize: 36 }}>${total.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  marginTop: 24,
+                }}
+              >
+                <Link
+                  href="/order-overview"
+                  className="ifn-btn ifn-btn--ghost ifn-btn--full"
+                  style={{ textDecoration: "none" }}
+                >
+                  Back to overview
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="ifn-btn ifn-btn--soft ifn-btn--full"
+                  style={{ textDecoration: "none" }}
+                >
+                  Back to dashboard
+                </Link>
               </div>
             </>
           )}
-
-          {/* Action Buttons */}
-          <div className="space-y-3 pt-4">
-            <Button
-              fullWidth={true}
-              variant="primary"
-              onClick={() => router.push("/order-overview")}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              Back to Overview
-            </Button>
-            <Button
-              fullWidth={true}
-              variant="secondary"
-              onClick={() => router.push("/dashboard")}
-              className="bg-slate-600 hover:bg-slate-700"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
+          {hostProfile && null}
         </div>
-      </Card>
-    </PageContainer>
+      </div>
+    </main>
   );
 }
 
@@ -254,13 +455,20 @@ export default function OrderModePage() {
     <ProtectedRoute>
       <Suspense
         fallback={
-          <PageContainer variant="gradient">
-            <Card variant="auth" className="w-full max-w-lg">
-              <div className="p-6 text-center">
-                <LoadingSpinner size="lg" text="Loading..." />
+          <main className="ifn-screen ifn-app">
+            <div
+              style={{
+                maxWidth: 420,
+                margin: "0 auto",
+                padding: "60px 24px",
+                textAlign: "center",
+              }}
+            >
+              <div className="ifn-display" style={{ fontSize: 22 }}>
+                Loading…
               </div>
-            </Card>
-          </PageContainer>
+            </div>
+          </main>
         }
       >
         <OrderModePageContent />

@@ -47,8 +47,8 @@ export const OrderList = ({
   const handleRemoveOrder = async (orderId: string) => {
     try {
       await removeOrder(orderId);
-    } catch (error) {
-      console.error("Failed to remove order:", error);
+    } catch (e) {
+      console.error("Failed to remove order:", e);
     }
   };
 
@@ -57,7 +57,6 @@ export const OrderList = ({
       console.error("Missing active event");
       return;
     }
-
     try {
       await addOrder(
         {
@@ -69,20 +68,24 @@ export const OrderList = ({
         },
         guestName
       );
-    } catch (error) {
-      console.error("Failed to duplicate order:", error);
+    } catch (e) {
+      console.error("Failed to duplicate order:", e);
     }
   };
 
   const handleEditOrder = async (
     orderId: string,
-    updates: { spice_level?: number; is_indian_hot?: boolean; special_instructions?: string | null }
+    updates: {
+      spice_level?: number;
+      is_indian_hot?: boolean;
+      special_instructions?: string | null;
+    }
   ): Promise<void> => {
     try {
       await updateOrder(orderId, updates);
-    } catch (error) {
-      console.error("Failed to update order:", error);
-      throw error;
+    } catch (e) {
+      console.error("Failed to update order:", e);
+      throw e;
     }
   };
 
@@ -92,8 +95,8 @@ export const OrderList = ({
   ) => {
     try {
       await updateOrder(orderId, { is_submitted: isSubmitted });
-    } catch (error) {
-      console.error("Failed to update order status:", error);
+    } catch (e) {
+      console.error("Failed to update order status:", e);
     }
   };
 
@@ -108,27 +111,38 @@ export const OrderList = ({
 
   if (error) {
     return (
-      <div className="text-center py-4">
-        <div className="text-red-500 mb-2">⚠️</div>
-        <p className="text-red-600 text-xs">{error}</p>
+      <div
+        style={{
+          textAlign: "center",
+          padding: "16px 0",
+          color: "var(--ifn-chili)",
+          fontSize: 12,
+        }}
+      >
+        {error}
       </div>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <div className="text-center py-4">
-        <p className="text-slate-600 text-sm">No orders yet</p>
+      <div
+        style={{
+          textAlign: "center",
+          padding: "16px 0",
+          color: "var(--ifn-muted)",
+          fontSize: 13,
+        }}
+      >
+        No orders yet
       </div>
     );
   }
 
-  // Filter orders based on whether we should show all or just current user's
   const filteredOrders = shouldShowAllOrders
     ? orders
     : orders.filter((order) => order.user_name === currentUserName);
 
-  // Group orders by user name
   const ordersByUser = filteredOrders.reduce((acc, order) => {
     const userName = order.user_name || "Unknown User";
     if (!acc[userName]) {
@@ -138,59 +152,92 @@ export const OrderList = ({
     return acc;
   }, {} as Record<string, OrderWithMenuItem[]>);
 
+  const runningTotal = filteredOrders.reduce(
+    (sum, o) => sum + o.menu_items.price,
+    0
+  );
 
   return (
     <div>
       {Object.keys(ordersByUser).length !== 0 && (
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-slate-800">
-            {shouldShowAllOrders ? "All Orders" : "Your Order"}
-          </h3>
-          {isHostView && isOverviewPage && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <div className="ifn-display" style={{ fontSize: 22 }}>
+            {shouldShowAllOrders ? "All orders" : "Your order"}
+          </div>
+          {isHostView && isOverviewPage ? (
             <button
+              type="button"
               onClick={() => setIsEditMode(!isEditMode)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors shadow-sm border ${
-                isEditMode
-                  ? "bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-200"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
-              }`}
+              className={
+                isEditMode ? "ifn-pill ifn-pill--accent" : "ifn-pill"
+              }
+              style={{ border: 0, cursor: "pointer", fontSize: 11 }}
             >
-              {isEditMode ? "✓ Done Editing" : "✏️ Edit Status"}
+              {isEditMode ? "Done editing" : "Edit status"}
             </button>
+          ) : (
+            <div
+              className="ifn-num"
+              style={{ fontSize: 12.5, color: "var(--ifn-muted)" }}
+            >
+              {filteredOrders.length}{" "}
+              {filteredOrders.length === 1 ? "item" : "items"}
+            </div>
           )}
         </div>
       )}
 
       {Object.entries(ordersByUser).map(([userName, userOrders]) => {
         const isCurrentUser = userName === currentUserName;
-        // For hosts, calculate user total excluding unsubmitted orders
         const userOrdersForCalculation = isHostView
-          ? userOrders.filter((order) => order.is_submitted)
+          ? userOrders.filter((o) => o.is_submitted)
           : userOrders;
-
         const userTotal = userOrdersForCalculation.reduce(
-          (sum, order) => sum + order.menu_items.price,
+          (sum, o) => sum + o.menu_items.price,
           0
         );
 
         return (
-          <div key={userName} className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4
-                className={`font-medium text-sm ${
-                  isCurrentUser ? "text-orange-600" : "text-slate-700"
-                }`}
+          <div key={userName} style={{ marginBottom: 16 }}>
+            {(shouldShowAllOrders || isOverviewPage) && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
               >
-                {isCurrentUser ? `${userName} (You)` : userName}
-              </h4>
-              {isOverviewPage && (
-                <span className="text-xs text-slate-500">
-                  ${userTotal.toFixed(2)}
-                </span>
-              )}
-            </div>
-            <div className="space-y-1">
-              {userOrders.map((order) => (
+                <div
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    color: isCurrentUser
+                      ? "var(--ifn-primary)"
+                      : "var(--ifn-ink)",
+                  }}
+                >
+                  {isCurrentUser ? `${userName} · you` : userName}
+                </div>
+                {isOverviewPage && (
+                  <div
+                    className="ifn-num"
+                    style={{ fontSize: 12, color: "var(--ifn-muted)" }}
+                  >
+                    ${userTotal.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="ifn-card" style={{ overflow: "hidden" }}>
+              {userOrders.map((order, idx) => (
                 <OrderListItem
                   key={order.id}
                   order={order}
@@ -201,6 +248,7 @@ export const OrderList = ({
                   isOverviewPage={isOverviewPage}
                   isHostView={isHostView}
                   isEditMode={isEditMode}
+                  hideDivider={idx === userOrders.length - 1}
                 />
               ))}
             </div>
@@ -208,7 +256,27 @@ export const OrderList = ({
         );
       })}
 
-      {/* Show total only on overview page when there are orders */}
+      {!isOverviewPage && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 16,
+          }}
+        >
+          <span style={{ fontSize: 13, color: "var(--ifn-muted)" }}>
+            Running total
+          </span>
+          <span
+            className="ifn-num ifn-display"
+            style={{ fontSize: 24 }}
+          >
+            ${runningTotal.toFixed(2)}
+          </span>
+        </div>
+      )}
+
       {isOverviewPage && (
         <OrderListTotals
           orders={filteredOrders}
@@ -216,6 +284,7 @@ export const OrderList = ({
           shouldShowAllOrders={shouldShowAllOrders}
           hostVenmoUsername={hostProfile?.venmo_username || null}
           hostName={hostProfile?.full_name || null}
+          eventDate={activeEvent?.event_date || null}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import EventInfo from "@/components/EventInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
@@ -11,7 +12,38 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
 import { useHostProfile } from "@/hooks/useHostProfile";
 import { calculateCutoffStatus, formatCutoffTime } from "@/util/cutoffUtil";
-import Button from "@/ui/button";
+
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M15 6l-6 6 6 6"
+      stroke="var(--ifn-ink-2)"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const MoreIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <circle cx="5" cy="12" r="1.4" fill="var(--ifn-ink-2)" />
+    <circle cx="12" cy="12" r="1.4" fill="var(--ifn-ink-2)" />
+    <circle cx="19" cy="12" r="1.4" fill="var(--ifn-ink-2)" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M5 12.5l4.5 4.5L19 7"
+      stroke="#fff"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 function OrderPageContent() {
   const { activeEvent } = useActiveEvent();
@@ -31,87 +63,97 @@ function OrderPageContent() {
     (order) => order.user_name === currentUserName
   );
 
-  // Check if all user orders are already submitted
-  const allOrdersSubmitted = userOrders.length > 0 && userOrders.every(order => order.is_submitted);
+  const allOrdersSubmitted =
+    userOrders.length > 0 && userOrders.every((order) => order.is_submitted);
+
+  const restaurant =
+    activeEvent?.restaurant || "Coriander Indian Grill";
 
   return (
-    <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-      <div className="w-full max-w-md mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="bg-orange-400 text-center py-3 px-4 relative">
-          <h1 className="text-xs font-medium text-slate-700 leading-tight">
-            Place Your Order
-          </h1>
+    <main className="ifn-screen ifn-app">
+      <div style={{ maxWidth: 420, margin: "0 auto", width: "100%", flex: 1 }}>
+        <div className="ifn-topbar">
+          <Link
+            href="/dashboard"
+            className="ifn-topbar-btn"
+            style={{ textDecoration: "none" }}
+          >
+            <BackIcon />
+          </Link>
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <div
+              className="ifn-eyebrow"
+              style={{ fontSize: 10, marginBottom: 2 }}
+            >
+              Ordering from
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {restaurant}
+            </div>
+          </div>
+          <span className="ifn-topbar-btn">
+            <MoreIcon />
+          </span>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* User Info */}
-          <EventInfo className="mb-8" />
+        <div className="ifn-screen-pad" style={{ paddingTop: 4 }}>
+          <EventInfo />
 
-          {/* Cutoff Warning Banner */}
           {cutoffStatus?.isPastCutoff && cutoffStatus.cutoffDateTime && (
             <CutoffWarningBanner
-              hostName={hostProfile?.full_name || hostProfile?.email || "the host"}
+              hostName={
+                hostProfile?.full_name || hostProfile?.email || "the host"
+              }
               cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
             />
           )}
 
-          {/* Order Section */}
-          <div>
-            <OrderItem onOrderAdded={refetch} />
-          </div>
+          <OrderItem onOrderAdded={refetch} />
 
-          {/* Order List */}
-          <div>
-            <OrderList
-              orders={orders}
-              loading={loading}
-              error={error}
-            />
-          </div>
+          <OrderList orders={orders} loading={loading} error={error} />
 
-          {/* Order Overview Button - Reserve space while loading to prevent layout shift */}
           {loading ? (
-            <div className="pt-4 border-t border-slate-400/20 space-y-3">
-              <div className="skeleton h-12 w-full rounded-2xl bg-slate-300/60" />
+            <div style={{ marginTop: 16 }}>
+              <div className="ifn-skel" style={{ height: 48, borderRadius: 14 }} />
             </div>
           ) : userOrders.length > 0 ? (
-            <div className="pt-4 border-t border-slate-400/20 space-y-3">
-              <Button
-                fullWidth={true}
-                variant="primary"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={finalizing}
-                onClick={async () => {
-                  if (allOrdersSubmitted) {
-                    // If all orders are already submitted, just navigate to overview
+            <button
+              type="button"
+              className="ifn-btn ifn-btn--primary ifn-btn--full"
+              style={{ marginTop: 16 }}
+              disabled={finalizing}
+              onClick={async () => {
+                if (allOrdersSubmitted) {
+                  window.location.href = "/order-overview";
+                } else {
+                  setFinalizing(true);
+                  try {
+                    const updatePromises = userOrders.map((order) =>
+                      updateOrder(order.id, { is_submitted: true })
+                    );
+                    await Promise.all(updatePromises);
                     window.location.href = "/order-overview";
-                  } else {
-                    setFinalizing(true);
-                    try {
-                      // Mark all user's orders as submitted
-                      const updatePromises = userOrders.map((order) =>
-                        updateOrder(order.id, { is_submitted: true })
-                      );
-                      await Promise.all(updatePromises);
-
-                      // Navigate to overview page
-                      window.location.href = "/order-overview";
-                    } catch (error) {
-                      console.error("Failed to finalize orders:", error);
-                      alert("Failed to finalize orders. Please try again.");
-                      setFinalizing(false);
-                    }
+                  } catch (err) {
+                    console.error("Failed to finalize orders:", err);
+                    alert("Failed to finalize orders. Please try again.");
+                    setFinalizing(false);
                   }
-                }}
-              >
-                {finalizing
-                  ? "Finalizing..."
-                  : allOrdersSubmitted
-                    ? "Order Overview"
-                    : "Finalize Order"}
-              </Button>
-            </div>
+                }
+              }}
+            >
+              <CheckIcon />
+              {finalizing
+                ? "Finalizing…"
+                : allOrdersSubmitted
+                ? "Order overview"
+                : "Finalize my order"}
+            </button>
           ) : null}
         </div>
       </div>
@@ -123,11 +165,18 @@ export default function OrderPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-          <div className="w-full max-w-md mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-6 text-center">
-              <div className="loading loading-spinner loading-md mb-4"></div>
-              <p className="text-slate-700">Loading...</p>
+        <main className="ifn-screen ifn-app">
+          <div
+            style={{
+              maxWidth: 420,
+              margin: "0 auto",
+              width: "100%",
+              padding: "60px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div className="ifn-display" style={{ fontSize: 22 }}>
+              Loading…
             </div>
           </div>
         </main>

@@ -21,3 +21,13 @@ export function getNextWednesdayShort(): string {
   const date = new Date(getNextWednesday());
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+
+/**
+ * Extract the day-of-month from an ISO date string with the leading zero stripped.
+ * @param dateStr - ISO date string (e.g., "2026-02-18")
+ * @returns Day of month as string without leading zero (e.g., "18", "4")
+ */
+export function formatDayOfMonth(dateStr: string): string {
+  const [, , d] = dateStr.split("-");
+  return d.replace(/^0/, "");
+}

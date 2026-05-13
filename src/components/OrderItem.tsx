@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useMenu } from "@/contexts/MenuContext";
-import Button from "@/ui/button";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { addOrderUtil } from "@/util/orderUtil";
@@ -11,6 +10,12 @@ import AutocompleteInput from "./AutocompleteInput";
 import SpiceSelector from "./SpiceSelector";
 import { shouldShowSpiceSelector } from "@/util/spiceUtil";
 import ReportMenuItemForm from "./ReportMenuItemForm";
+
+const PlusIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
 interface OrderItemProps {
   onOrderAdded?: () => Promise<void> | void;
@@ -26,7 +31,6 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
   const { user } = useAuth();
   const autocompleteRef = useRef<HTMLInputElement>(null);
 
-  // Handler for spice level changes that auto-disables Indian Hot if below 10
   const handleSpiceLevelChange = (level: number) => {
     setSpiceLevel(level);
     if (level < 10 && indianHot) {
@@ -36,66 +40,62 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
 
   const { menuItems, isLoading: menuLoading, error: menuError } = useMenu();
 
-  const senderName = user?.user_metadata?.full_name || user?.email || guestName.trim();
+  const senderName =
+    user?.user_metadata?.full_name || user?.email || guestName.trim();
 
-  // Show loading state while menu is loading
   const isDisabled = menuLoading || !!menuError;
 
-  // Get the selected menu item for spice level logic
   const selectedMenuItem = menuItems.find(
     (item) => item.name.toLowerCase() === itemName.toLowerCase()
   );
 
   const handleItemSelect = (selectedItem: any) => {
     setItemName(selectedItem.name);
-
-    // Set spice level to 0 for items that don't need spice levels
     if (!shouldShowSpiceSelector(selectedItem)) {
       setSpiceLevel(0);
       setIndianHot(false);
     } else {
-      // Default to 0 for items that can have spice levels
       setSpiceLevel(0);
     }
   };
 
   const handleEnterPressed = async () => {
-    // Only add if there's a valid item name
     if (itemName.trim()) {
       await handleAddOrder();
     }
   };
 
   const handleAddOrder = async () => {
-    const selectedMenuItem = menuItems.find(
+    const matched = menuItems.find(
       (item) => item.name.toLowerCase() === itemName.toLowerCase()
     );
 
-    if (!selectedMenuItem || !activeEvent) {
+    if (!matched || !activeEvent) {
       console.error("Missing menu item or active event");
       return;
     }
 
-    // If no user is logged in, require guest name
     if (!user && !guestName.trim()) {
       console.error("Guest name is required when not logged in");
       return;
     }
 
     try {
-      // Create user object for logged in user or guest
       const orderUser = user || {
         email: guestName.trim(),
         user_metadata: { full_name: guestName.trim() },
       };
 
-      // Use spice level 0 for items that don't need spice levels
-      const finalSpiceLevel = shouldShowSpiceSelector(selectedMenuItem) ? spiceLevel : null;
-      const finalIndianHot = shouldShowSpiceSelector(selectedMenuItem) ? indianHot : false;
+      const finalSpiceLevel = shouldShowSpiceSelector(matched)
+        ? spiceLevel
+        : null;
+      const finalIndianHot = shouldShowSpiceSelector(matched)
+        ? indianHot
+        : false;
 
       await addOrderUtil(
         {
-          menu_item_id: selectedMenuItem.id,
+          menu_item_id: matched.id,
           event_id: activeEvent.id,
           spice_level: finalSpiceLevel,
           is_indian_hot: finalIndianHot,
@@ -107,18 +107,15 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         }
       );
 
-      // Refresh the orders list
       if (onOrderAdded) {
         await onOrderAdded();
       }
 
-      // Clear the form after successful addition
       setItemName("");
       setSpiceLevel(0);
       setIndianHot(false);
       setSpecialInstructions("");
-      
-      // Refocus the input for quick successive entries
+
       setTimeout(() => {
         autocompleteRef.current?.focus();
       }, 100);
@@ -127,10 +124,20 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
     }
   };
 
+  const canAdd =
+    !!itemName &&
+    !!selectedMenuItem &&
+    !!activeEvent &&
+    (!!user || !!guestName.trim()) &&
+    !isDisabled;
+
   return (
-    <div className="bg-slate-500 rounded-2xl p-3 my-4 shadow-md relative">
-      {/* Item Name Input - Top Left */}
-      <div className="mb-3">
+    <div className="ifn-card" style={{ padding: 16, marginBottom: 18 }}>
+      <div className="ifn-eyebrow" style={{ marginBottom: 10 }}>
+        Add a dish
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
         <AutocompleteInput
           inputRef={autocompleteRef}
           value={itemName}
@@ -138,7 +145,7 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
           onItemSelect={handleItemSelect}
           onEnterPressed={handleEnterPressed}
           items={menuItems}
-          placeholder="Start typing a dish name..."
+          placeholder="Start typing a dish…"
           disabled={isDisabled}
           isLoading={menuLoading}
           error={menuError || undefined}
@@ -153,19 +160,25 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         shouldShow={shouldShowSpiceSelector(selectedMenuItem || null)}
       />
 
-      {/* Special Instructions - Show only when item is selected */}
       {itemName && selectedMenuItem && (
-        <div className="mb-3">
+        <div style={{ marginTop: 12, marginBottom: 12 }}>
           <textarea
+            className="ifn-input"
             value={specialInstructions}
             onChange={(e) => setSpecialInstructions(e.target.value)}
             placeholder="Special instructions (optional)"
-            className="w-full p-2 border border-slate-400 rounded-lg bg-white text-slate-800 placeholder-slate-500 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
             rows={2}
             maxLength={200}
+            style={{ resize: "none", fontFamily: "var(--ifn-ui)" }}
           />
           {specialInstructions.length > 150 && (
-            <div className="text-xs text-slate-600 mt-1">
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--ifn-muted)",
+                marginTop: 4,
+              }}
+            >
               {200 - specialInstructions.length} characters remaining
             </div>
           )}
@@ -183,19 +196,16 @@ const OrderItem = ({ onOrderAdded }: OrderItemProps) => {
         </div>
       )}
 
-      <Button
-        fullWidth={true}
+      <button
+        type="button"
         onClick={handleAddOrder}
-        disabled={
-          !itemName ||
-          !selectedMenuItem ||
-          !activeEvent ||
-          (!user && !guestName.trim()) ||
-          isDisabled
-        }
+        disabled={!canAdd}
+        className="ifn-btn ifn-btn--ink ifn-btn--full"
+        style={{ marginTop: 14 }}
       >
-        Add To Order
-      </Button>
+        <PlusIcon />
+        Add to order
+      </button>
     </div>
   );
 };

@@ -5,7 +5,6 @@ import { useHostProfile } from "@/hooks/useHostProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import { formatTimeToAMPM } from "@/util/timeUtils";
-import IconButton from "@/ui/IconButton";
 
 interface UserInfoProps {
   showProfilePicture?: boolean;
@@ -55,7 +54,6 @@ export default function EventInfo({ className }: UserInfoProps) {
   }
 
   const address = activeEvent?.location || "Contact Host For Info";
-  const restaurant = activeEvent?.restaurant || "Coriander Indian Grill";
   const isOrderPage = pathname === "/order";
 
   // Hide if current user is the host AND on the overview page
@@ -80,88 +78,126 @@ export default function EventInfo({ className }: UserInfoProps) {
     }
   };
 
-  // ORDERING LAYOUT - Show restaurant and host info for ordering
+  // ORDERING LAYOUT - host strip with avatar, name, address/time, "Open" pill
   if (isOrderPage) {
+    const hostName =
+      hostProfile?.full_name || hostProfile?.email || "Host";
+    const initial = hostName.charAt(0).toUpperCase();
+    const timeLabel = activeEvent?.start_time
+      ? formatTimeToAMPM(activeEvent.start_time)
+      : "6:30 PM";
     return (
-      <div className={`flex items-center justify-between ${className || ''}`}>
-        <div className="flex-1">
-          <div className="flex items-center mb-2">
-            <div className="w-4 h-4 bg-orange-600 rounded-sm flex items-center justify-center mr-3">
-              <span className="text-white text-xs">🍽️</span>
-            </div>
-            <span className="font-semibold text-slate-800 text-sm">
-              {restaurant}
-            </span>
-          </div>
-          <div className="flex items-center text-xs text-slate-700">
-            <div className="w-4 h-4 bg-blue-600 rounded-sm flex items-center justify-center mr-3">
-              <span className="text-white text-xs">👤</span>
-            </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 0 18px",
+        }}
+        className={className}
+      >
+        <button
+          type="button"
+          onClick={handleMenuClick}
+          title="View restaurant menu"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "var(--ifn-primary)",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 500,
+            border: 0,
+            cursor: "pointer",
+          }}
+        >
+          {initial}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 500 }}>
             {loading ? (
-              <span className="flex items-center gap-2">
-                Hosted by
-                <span className="skeleton h-3 w-24 bg-slate-300/60 inline-block align-middle" />
-                {activeEvent?.start_time
-                  ? `@ ${formatTimeToAMPM(activeEvent.start_time)}`
-                  : "@ 6:30 PM"}
-              </span>
+              <span
+                className="ifn-skel"
+                style={{
+                  display: "inline-block",
+                  width: 120,
+                  height: 12,
+                  verticalAlign: "middle",
+                }}
+              />
             ) : (
-              <span>
-                Hosted by {hostProfile?.full_name || hostProfile?.email || "Host"}
-                {activeEvent?.start_time
-                  ? ` @ ${formatTimeToAMPM(activeEvent.start_time)}`
-                  : " @ 6:30 PM"}
-              </span>
+              `Hosted by ${hostName}`
             )}
           </div>
+          <div style={{ fontSize: 11.5, color: "var(--ifn-muted)" }}>
+            {address} · {timeLabel}
+          </div>
         </div>
-
-        <IconButton
-          onClick={handleMenuClick}
-          className="w-10 h-10 bg-orange-600 hover:bg-orange-700 ml-4 shadow-sm hover:shadow-md"
-          title="View restaurant menu"
-          icon={<span className="text-white text-lg">📋</span>}
-        />
+        <span className="ifn-pill ifn-pill--green">
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: "var(--ifn-green)",
+            }}
+          />
+          Open
+        </span>
       </div>
     );
   }
 
-  // NAVIGATION LAYOUT - Show address and navigation for overview/other pages
+  // NAVIGATION LAYOUT - host + address card for overview/other pages
+  const hostName = hostProfile?.full_name || hostProfile?.email || "Host";
+  const timeLabel = activeEvent?.start_time
+    ? formatTimeToAMPM(activeEvent.start_time)
+    : "6:30 PM";
+
   return (
-    <div className={`flex items-center justify-between ${className || ''}`}>
-      <div className="flex-1">
-        <div className="flex items-center mb-2">
-          <div className="w-4 h-4 bg-blue-600 rounded-sm flex items-center justify-center mr-3">
-            <span className="text-white text-xs">👤</span>
-          </div>
+    <div
+      className={`ifn-card ${className || ""}`}
+      style={{
+        padding: 14,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 2 }}>
           {loading ? (
-            <span className="skeleton h-3.5 w-32 bg-slate-300/60 inline-block align-middle" />
+            <span
+              className="ifn-skel"
+              style={{
+                display: "inline-block",
+                width: 120,
+                height: 12,
+                verticalAlign: "middle",
+              }}
+            />
           ) : (
-            <span className="font-semibold text-slate-800 text-sm">
-              {hostProfile?.full_name || hostProfile?.email || "Host"}
-            </span>
+            `Hosted by ${hostName}`
           )}
         </div>
-        <div className="flex items-center text-xs text-slate-700">
-          <div className="w-4 h-4 bg-green-600 rounded-sm flex items-center justify-center mr-3">
-            <span className="text-white text-xs">🏠</span>
-          </div>
-          <span className="flex-1">
-            {address || "Address not provided"}
-            {activeEvent?.start_time
-              ? ` @ ${formatTimeToAMPM(activeEvent.start_time)}`
-              : " @ 6:30 PM"}
-          </span>
+        <div style={{ fontSize: 11.5, color: "var(--ifn-muted)" }}>
+          {address || "Address not provided"} · {timeLabel}
         </div>
       </div>
-
       {address && (
-        <IconButton
+        <button
+          type="button"
           onClick={handleNavigateClick}
-          className="w-10 h-10 bg-green-600 hover:bg-green-700 ml-4 shadow-sm hover:shadow-md"
           title="Navigate to location"
-          icon={<span className="text-white text-lg">🚗</span>}
-        />
+          className="ifn-btn ifn-btn--soft"
+          style={{ padding: "8px 12px", fontSize: 12 }}
+        >
+          Directions
+        </button>
       )}
     </div>
   );
