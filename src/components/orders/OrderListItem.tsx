@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { OrderWithMenuItem } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
-import PopupMenu from "../PopupMenu";
-import SpiceSelector from "../SpiceSelector";
-import SpiceDots from "@/ui/SpiceDots";
+import { useOrderEditDraft } from "@/hooks/useOrderEditDraft";
 import { shouldShowSpiceSelector } from "@/util/spiceUtil";
+import PopupMenu from "../PopupMenu";
+import OrderListItemView from "./OrderListItemView";
+import OrderListItemEditor from "./OrderListItemEditor";
 
 interface OrderListItemProps {
   order: OrderWithMenuItem;
@@ -28,6 +28,43 @@ interface OrderListItemProps {
   hideDivider?: boolean;
 }
 
+function buildMenuItems({
+  canEdit,
+  canRemove,
+  onDuplicate,
+  onEdit,
+  onRemove,
+}: {
+  canEdit: boolean;
+  canRemove: boolean;
+  onDuplicate: () => void;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const items = [
+    {
+      label: "Duplicate",
+      onClick: onDuplicate,
+      icon: <span style={{ color: "var(--ifn-primary)" }}>⧉</span>,
+    },
+  ];
+  if (canEdit) {
+    items.push({
+      label: "Edit",
+      onClick: onEdit,
+      icon: <span style={{ color: "var(--ifn-primary)" }}>✎</span>,
+    });
+  }
+  if (canRemove) {
+    items.push({
+      label: "Remove",
+      onClick: onRemove,
+      icon: <span style={{ color: "var(--ifn-chili)" }}>−</span>,
+    });
+  }
+  return items;
+}
+
 export default function OrderListItem({
   order,
   onRemove,
@@ -39,16 +76,10 @@ export default function OrderListItem({
   isEditMode = false,
   hideDivider = false,
 }: OrderListItemProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editSpiceLevel, setEditSpiceLevel] = useState(order.spice_level || 1);
-  const [editIndianHot, setEditIndianHot] = useState(
-    order.is_indian_hot || false
-  );
-  const [editSpecialInstructions, setEditSpecialInstructions] = useState(
-    order.special_instructions || ""
-  );
   const { user } = useAuth();
   const { guestName } = useGuestName();
+  const draft = useOrderEditDraft({ order, onEdit });
+
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
   const isCurrentUserOrder = order.user_name === currentUserName;
@@ -63,254 +94,57 @@ export default function OrderListItem({
     vegan: order.menu_items.is_vegan || false,
   });
 
-  const handleRemove = () => onRemove(order.id);
-  const handleDuplicate = () => onDuplicate(order);
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditSpiceLevel(order.spice_level || 1);
-    setEditIndianHot(order.is_indian_hot || false);
-    setEditSpecialInstructions(order.special_instructions || "");
-  };
-  const handleSaveEdit = async () => {
-    if (!onEdit) return;
-    try {
-      await onEdit(order.id, {
-        spice_level: editSpiceLevel,
-        is_indian_hot: editIndianHot,
-        special_instructions: editSpecialInstructions.trim() || null,
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to save order edit:", error);
-    }
-  };
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditSpiceLevel(order.spice_level || 1);
-    setEditIndianHot(order.is_indian_hot || false);
-    setEditSpecialInstructions(order.special_instructions || "");
-  };
-  const handleToggleSubmitted = () => {
-    if (onToggleSubmitted) {
-      onToggleSubmitted(order.id, !order.is_submitted);
-    }
-  };
-
-  const isGrayedOut = isHostView && !order.is_submitted;
-  const rowStyle: React.CSSProperties = {
-    padding: "14px 16px",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    borderBottom: hideDivider ? "none" : "1px solid var(--ifn-border)",
-    opacity: isGrayedOut ? 0.55 : 1,
-  };
-
-  if (isEditing) {
+  if (draft.isEditing) {
     return (
-      <div style={{ padding: 16, borderBottom: hideDivider ? "none" : "1px solid var(--ifn-border)" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 10,
-          }}
-        >
-          <span style={{ fontSize: 14, fontWeight: 500 }}>
-            Editing: {order.menu_items.name}
-          </span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              onClick={handleSaveEdit}
-              className="ifn-btn ifn-btn--primary"
-              style={{ padding: "8px 14px", fontSize: 13 }}
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="ifn-btn ifn-btn--ghost"
-              style={{ padding: "8px 14px", fontSize: 13 }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-
-        {supportsSpice && (
-          <SpiceSelector
-            spiceLevel={editSpiceLevel}
-            onSpiceLevelChange={setEditSpiceLevel}
-            indianHot={editIndianHot}
-            onIndianHotChange={setEditIndianHot}
-            shouldShow={true}
-          />
-        )}
-
-        <textarea
-          className="ifn-input"
-          value={editSpecialInstructions}
-          onChange={(e) => setEditSpecialInstructions(e.target.value)}
-          placeholder="Special instructions (optional)"
-          rows={2}
-          maxLength={200}
-          style={{ resize: "none", fontFamily: "var(--ifn-ui)" }}
-        />
-        {editSpecialInstructions.length > 150 && (
-          <div
-            style={{ fontSize: 11, color: "var(--ifn-muted)", marginTop: 4 }}
-          >
-            {200 - editSpecialInstructions.length} characters remaining
-          </div>
-        )}
-      </div>
+      <OrderListItemEditor
+        itemName={order.menu_items.name}
+        supportsSpice={supportsSpice}
+        spiceLevel={draft.spiceLevel}
+        onSpiceLevelChange={draft.setSpiceLevel}
+        indianHot={draft.indianHot}
+        onIndianHotChange={draft.setIndianHot}
+        specialInstructions={draft.specialInstructions}
+        onSpecialInstructionsChange={draft.setSpecialInstructions}
+        onSave={draft.saveEdits}
+        onCancel={draft.cancelEditing}
+        hideDivider={hideDivider}
+      />
     );
   }
 
-  return (
-    <div style={rowStyle}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 14.5,
-            fontWeight: 500,
-            marginBottom: 3,
-            color: "var(--ifn-ink)",
-          }}
-        >
-          {order.menu_items.name}
-          {isGrayedOut && (
-            <span
-              style={{
-                marginLeft: 8,
-                fontSize: 11,
-                color: "var(--ifn-muted)",
-              }}
-            >
-              (Not submitted)
-            </span>
-          )}
-        </div>
-        {supportsSpice && (order.spice_level ?? 0) > 0 && (
-          <div
-            style={{
-              fontSize: 12,
-              color: "var(--ifn-muted)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <SpiceDots level={order.spice_level || 0} />
-            <span>
-              Spice {order.spice_level}
-              {order.is_indian_hot && (
-                <span style={{ color: "var(--ifn-chili)" }}> · Indian hot</span>
-              )}
-            </span>
-          </div>
-        )}
-        {order.special_instructions && (
-          <div
-            style={{
-              fontSize: 11.5,
-              color: "var(--ifn-muted)",
-              marginTop: 4,
-            }}
-          >
-            Note: {order.special_instructions}
-          </div>
-        )}
-      </div>
+  const menuItems = buildMenuItems({
+    canEdit: isCurrentUserOrder && !!onEdit,
+    canRemove: isCurrentUserOrder,
+    onDuplicate: () => onDuplicate(order),
+    onEdit: draft.beginEditing,
+    onRemove: () => onRemove(order.id),
+  });
 
-      {order.is_submitted && !isOverviewPage && (
-        <span
-          className="ifn-pill ifn-pill--green"
-          style={{ fontSize: 10 }}
-        >
-          Ordered
-        </span>
-      )}
-
-      <div
-        className="ifn-num"
-        style={{ fontSize: 13.5, color: "var(--ifn-ink-2)" }}
-      >
-        ${order.menu_items.price.toFixed(2)}
-      </div>
-
-      {isEditMode && isHostView && (
-        <button
-          type="button"
-          onClick={handleToggleSubmitted}
-          className={
-            order.is_submitted
-              ? "ifn-pill ifn-pill--green"
-              : "ifn-pill ifn-pill--accent"
-          }
-          style={{ border: 0, cursor: "pointer", fontSize: 10 }}
-          title={
-            order.is_submitted
-              ? "Mark as not submitted"
-              : "Mark as submitted"
-          }
-        >
-          {order.is_submitted ? "Submitted" : "Pending"}
+  const menuTrigger = (
+    <PopupMenu
+      items={menuItems}
+      trigger={
+        <button type="button" className="ifn-icon-btn">
+          ⋯
         </button>
-      )}
+      }
+      position="bottom-right"
+    />
+  );
 
-      {!isOverviewPage && (
-        <PopupMenu
-          items={[
-            {
-              label: "Duplicate",
-              onClick: handleDuplicate,
-              icon: <span style={{ color: "var(--ifn-primary)" }}>⧉</span>,
-            },
-            ...(isCurrentUserOrder && onEdit
-              ? [
-                  {
-                    label: "Edit",
-                    onClick: handleEdit,
-                    icon: <span style={{ color: "var(--ifn-primary)" }}>✎</span>,
-                  },
-                ]
-              : []),
-            ...(isCurrentUserOrder
-              ? [
-                  {
-                    label: "Remove",
-                    onClick: handleRemove,
-                    icon: <span style={{ color: "var(--ifn-chili)" }}>−</span>,
-                  },
-                ]
-              : []),
-          ]}
-          trigger={
-            <button
-              type="button"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 10,
-                border: 0,
-                background: "var(--ifn-surface-2)",
-                color: "var(--ifn-muted)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
-              ⋯
-            </button>
-          }
-          position="bottom-right"
-        />
-      )}
-    </div>
+  return (
+    <OrderListItemView
+      order={order}
+      supportsSpice={supportsSpice}
+      isGrayedOut={isHostView && !order.is_submitted}
+      isOverviewPage={isOverviewPage}
+      isEditMode={isEditMode}
+      isHostView={isHostView}
+      hideDivider={hideDivider}
+      onToggleSubmitted={() =>
+        onToggleSubmitted?.(order.id, !order.is_submitted)
+      }
+      menuTrigger={menuTrigger}
+    />
   );
 }
