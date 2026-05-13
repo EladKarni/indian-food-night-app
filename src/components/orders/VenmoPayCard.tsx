@@ -87,7 +87,7 @@ export default function VenmoPayCard({
               opacity: 0.75,
             }}
           >
-            Pay {displayName} back
+            Pay {displayName} for Food Order
           </div>
           <div
             className="ifn-num ifn-display"
