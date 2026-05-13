@@ -175,14 +175,12 @@
   pointer-events: none;
 }
 .ifn-spice-thumb {
-  pointer-events: none;
-}
-.ifn-spice-thumb {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
   width: 22px; height: 22px; border-radius: 50%;
   background: var(--ifn-ink);
   border: 3px solid var(--ifn-surface);
   box-shadow: 0 2px 8px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.05);
+  pointer-events: none;
 }
 
 /* Spice dots (read-only display) */
