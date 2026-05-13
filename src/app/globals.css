@@ -404,3 +404,57 @@ button.ifn-pill { border: 0; cursor: pointer; }
 .ifn-order-row:last-child,
 .ifn-order-row--no-divider { border-bottom: 0; }
 .ifn-order-row--dim { opacity: 0.55; }
+
+/* Standalone single-order card (replaces .ifn-order-row in grouped layout) */
+.ifn-card--row {
+  background: var(--ifn-surface);
+  border: 1px solid var(--ifn-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ifn-card--row:last-child { margin-bottom: 0; }
+.ifn-card--row--dim { opacity: 0.55; }
+
+/* Quantity stepper pill */
+.ifn-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--ifn-surface-2);
+  border-radius: 100px;
+  padding: 3px;
+  gap: 2px;
+}
+.ifn-stepper__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background .12s ease;
+}
+.ifn-stepper__btn:hover:not([disabled]) { background: rgba(0, 0, 0, 0.04); }
+.ifn-stepper__btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.ifn-stepper__btn--primary {
+  background: var(--ifn-ink);
+  color: var(--ifn-bg);
+}
+.ifn-stepper__btn--primary:hover:not([disabled]) { background: var(--ifn-ink); }
+.ifn-stepper__count {
+  min-width: 22px;
+  padding: 0 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ifn-ink);
+}

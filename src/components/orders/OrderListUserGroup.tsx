@@ -1,7 +1,11 @@
 "use client";
 
 import { OrderWithMenuItem } from "@/hooks/useOrders";
-import { sumOrderPrices } from "@/util/orderGrouping";
+import {
+  groupOrdersByVariant,
+  sumOrderPrices,
+  type OrderGroup,
+} from "@/util/orderGrouping";
 import OrderListItem from "./OrderListItem";
 
 interface OrderListUserGroupProps {
@@ -46,6 +50,17 @@ export default function OrderListUserGroup({
     : orders;
   const userTotal = sumOrderPrices(ordersForTotal);
 
+  // In host edit mode on the overview, render flat one-per-row groups so the
+  // per-order submit-toggle pill keeps working unchanged.
+  const skipGrouping = isEditMode && isHostView;
+  const groups: OrderGroup[] = skipGrouping
+    ? orders.map((order) => ({
+        key: order.id,
+        orders: [order],
+        representative: order,
+      }))
+    : groupOrdersByVariant(orders);
+
   function renderHeader() {
     if (!showHeader) return null;
     return (
@@ -74,11 +89,11 @@ export default function OrderListUserGroup({
   return (
     <div style={{ marginBottom: 16 }}>
       {renderHeader()}
-      <div className="ifn-card" style={{ overflow: "hidden" }}>
-        {orders.map((order, idx) => (
+      <div>
+        {groups.map((group) => (
           <OrderListItem
-            key={order.id}
-            order={order}
+            key={group.key}
+            group={group}
             onRemove={onRemove}
             onDuplicate={onDuplicate}
             onEdit={onEdit}
@@ -86,7 +101,6 @@ export default function OrderListUserGroup({
             isOverviewPage={isOverviewPage}
             isHostView={isHostView}
             isEditMode={isEditMode}
-            hideDivider={idx === orders.length - 1}
           />
         ))}
       </div>

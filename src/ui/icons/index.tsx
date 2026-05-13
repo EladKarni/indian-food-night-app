@@ -73,6 +73,62 @@ export const PlusIcon = ({
   </svg>
 );
 
+export const MinusIcon = ({
+  color = "var(--ifn-ink-2)",
+  size = 18,
+}: AppIconProps = {}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M5 12h14"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const PencilIcon = ({
+  color = "var(--ifn-ink-2)",
+  size = 16,
+}: AppIconProps = {}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M4 20h4l10.5-10.5a2.121 2.121 0 0 0-3-3L5 17v3z"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M13.5 6.5l3 3"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const TrashIcon = ({
+  color = "var(--ifn-chili)",
+  size = 16,
+}: AppIconProps = {}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 11v7M14 11v7"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 export const SearchIcon = ({
   color = "var(--ifn-muted)",
   size = 18,

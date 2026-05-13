@@ -5,12 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
 import { useOrderEditDraft } from "@/hooks/useOrderEditDraft";
 import { shouldShowSpiceSelector } from "@/util/spiceUtil";
-import PopupMenu from "../PopupMenu";
+import type { OrderGroup } from "@/util/orderGrouping";
 import OrderListItemView from "./OrderListItemView";
 import OrderListItemEditor from "./OrderListItemEditor";
 
 interface OrderListItemProps {
-  order: OrderWithMenuItem;
+  group: OrderGroup;
   onRemove: (orderId: string) => void;
   onDuplicate: (order: OrderWithMenuItem) => void;
   onEdit?: (
@@ -25,48 +25,10 @@ interface OrderListItemProps {
   isOverviewPage?: boolean;
   isHostView?: boolean;
   isEditMode?: boolean;
-  hideDivider?: boolean;
-}
-
-function buildMenuItems({
-  canEdit,
-  canRemove,
-  onDuplicate,
-  onEdit,
-  onRemove,
-}: {
-  canEdit: boolean;
-  canRemove: boolean;
-  onDuplicate: () => void;
-  onEdit: () => void;
-  onRemove: () => void;
-}) {
-  const items = [
-    {
-      label: "Duplicate",
-      onClick: onDuplicate,
-      icon: <span style={{ color: "var(--ifn-primary)" }}>⧉</span>,
-    },
-  ];
-  if (canEdit) {
-    items.push({
-      label: "Edit",
-      onClick: onEdit,
-      icon: <span style={{ color: "var(--ifn-primary)" }}>✎</span>,
-    });
-  }
-  if (canRemove) {
-    items.push({
-      label: "Remove",
-      onClick: onRemove,
-      icon: <span style={{ color: "var(--ifn-chili)" }}>−</span>,
-    });
-  }
-  return items;
 }
 
 export default function OrderListItem({
-  order,
+  group,
   onRemove,
   onDuplicate,
   onEdit,
@@ -74,30 +36,30 @@ export default function OrderListItem({
   isOverviewPage = false,
   isHostView = false,
   isEditMode = false,
-  hideDivider = false,
 }: OrderListItemProps) {
   const { user } = useAuth();
   const { guestName } = useGuestName();
-  const draft = useOrderEditDraft({ order, onEdit });
+  const { representative } = group;
+  const draft = useOrderEditDraft({ order: representative, onEdit });
 
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
-  const isCurrentUserOrder = order.user_name === currentUserName;
+  const isCurrentUserOrder = representative.user_name === currentUserName;
 
   const supportsSpice = shouldShowSpiceSelector({
-    id: order.menu_items.id,
-    name: order.menu_items.name,
-    description: order.menu_items.description || "",
-    price: order.menu_items.price,
+    id: representative.menu_items.id,
+    name: representative.menu_items.name,
+    description: representative.menu_items.description || "",
+    price: representative.menu_items.price,
     spiceLevel: 0,
-    vegetarian: order.menu_items.is_vegetarian || false,
-    vegan: order.menu_items.is_vegan || false,
+    vegetarian: representative.menu_items.is_vegetarian || false,
+    vegan: representative.menu_items.is_vegan || false,
   });
 
   if (draft.isEditing) {
     return (
       <OrderListItemEditor
-        itemName={order.menu_items.name}
+        itemName={representative.menu_items.name}
         supportsSpice={supportsSpice}
         spiceLevel={draft.spiceLevel}
         onSpiceLevelChange={draft.setSpiceLevel}
@@ -107,44 +69,33 @@ export default function OrderListItem({
         onSpecialInstructionsChange={draft.setSpecialInstructions}
         onSave={draft.saveEdits}
         onCancel={draft.cancelEditing}
-        hideDivider={hideDivider}
+        hideDivider
       />
     );
   }
 
-  const menuItems = buildMenuItems({
-    canEdit: isCurrentUserOrder && !!onEdit,
-    canRemove: isCurrentUserOrder,
-    onDuplicate: () => onDuplicate(order),
-    onEdit: draft.beginEditing,
-    onRemove: () => onRemove(order.id),
-  });
-
-  const menuTrigger = (
-    <PopupMenu
-      items={menuItems}
-      trigger={
-        <button type="button" className="ifn-icon-btn">
-          ⋯
-        </button>
-      }
-      position="bottom-right"
-    />
-  );
+  const canEdit = isCurrentUserOrder && !!onEdit && !isOverviewPage;
+  const canRemove = isCurrentUserOrder && !isOverviewPage;
 
   return (
     <OrderListItemView
-      order={order}
+      group={group}
       supportsSpice={supportsSpice}
-      isGrayedOut={isHostView && !order.is_submitted}
+      isGrayedOut={isHostView && !representative.is_submitted}
       isOverviewPage={isOverviewPage}
       isEditMode={isEditMode}
       isHostView={isHostView}
-      hideDivider={hideDivider}
+      canEdit={canEdit}
+      canRemove={canRemove}
+      onIncrement={() => onDuplicate(representative)}
+      onDecrement={() => onRemove(representative.id)}
+      onEdit={draft.beginEditing}
+      onRemoveGroup={() => {
+        group.orders.forEach((o) => onRemove(o.id));
+      }}
       onToggleSubmitted={() =>
-        onToggleSubmitted?.(order.id, !order.is_submitted)
+        onToggleSubmitted?.(representative.id, !representative.is_submitted)
       }
-      menuTrigger={menuTrigger}
     />
   );
 }

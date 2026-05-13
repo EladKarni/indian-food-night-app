@@ -1,144 +1,122 @@
 "use client";
 
-import { ReactNode } from "react";
-import { OrderWithMenuItem } from "@/hooks/useOrders";
-import SpiceDots from "@/ui/SpiceDots";
+import type { OrderGroup } from "@/util/orderGrouping";
+import OrderListItemTitle from "./OrderListItemTitle";
+import OrderListItemSpiceLine from "./OrderListItemSpiceLine";
+import OrderListItemPrice from "./OrderListItemPrice";
+import OrderListItemSubmitToggle from "./OrderListItemSubmitToggle";
+import OrderListItemActions from "./OrderListItemActions";
 
 interface OrderListItemViewProps {
-  order: OrderWithMenuItem;
+  group: OrderGroup;
   supportsSpice: boolean;
   isGrayedOut: boolean;
   isOverviewPage: boolean;
   isEditMode: boolean;
   isHostView: boolean;
-  hideDivider: boolean;
+  canEdit: boolean;
+  canRemove: boolean;
+  onIncrement: () => void;
+  onDecrement: () => void;
+  onEdit: () => void;
+  onRemoveGroup: () => void;
   onToggleSubmitted: () => void;
-  menuTrigger: ReactNode;
 }
 
 export default function OrderListItemView({
-  order,
+  group,
   supportsSpice,
   isGrayedOut,
   isOverviewPage,
   isEditMode,
   isHostView,
-  hideDivider,
+  canEdit,
+  canRemove,
+  onIncrement,
+  onDecrement,
+  onEdit,
+  onRemoveGroup,
   onToggleSubmitted,
-  menuTrigger,
 }: OrderListItemViewProps) {
-  const showSpice = supportsSpice && (order.spice_level ?? 0) > 0;
-  const rowClass = [
-    "ifn-order-row",
-    hideDivider ? "ifn-order-row--no-divider" : "",
-    isGrayedOut ? "ifn-order-row--dim" : "",
-  ]
+  const { representative } = group;
+  const quantity = group.orders.length;
+  const showSpice = supportsSpice && (representative.spice_level ?? 0) > 0;
+  const allSubmitted = group.orders.every((o) => o.is_submitted);
+  const showActions = canEdit || canRemove;
+  const showOrderedPill = !isOverviewPage && allSubmitted;
+  const showSubmitToggle = isEditMode && isHostView;
+
+  const cardClass = ["ifn-card--row", isGrayedOut ? "ifn-card--row--dim" : ""]
     .filter(Boolean)
     .join(" ");
 
-  function renderNotSubmittedTag() {
-    if (!isGrayedOut) return null;
-    return (
-      <span
-        style={{
-          marginLeft: 8,
-          fontSize: 11,
-          color: "var(--ifn-muted)",
-        }}
-      >
-        (Not submitted)
-      </span>
-    );
-  }
-
-  function renderSpiceLine() {
-    if (!showSpice) return null;
-    return (
+  return (
+    <div className={cardClass}>
       <div
         style={{
-          fontSize: 12,
-          color: "var(--ifn-muted)",
           display: "flex",
-          alignItems: "center",
-          gap: 8,
+          alignItems: "flex-start",
+          gap: 12,
         }}
       >
-        <SpiceDots level={order.spice_level || 0} />
-        <span>
-          Spice {order.spice_level}
-          {order.is_indian_hot && (
-            <span style={{ color: "var(--ifn-chili)" }}> · Indian hot</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <OrderListItemTitle
+            name={representative.menu_items.name}
+            showNotSubmittedTag={isGrayedOut}
+          />
+          {showSpice && (
+            <OrderListItemSpiceLine
+              spiceLevel={representative.spice_level || 0}
+              isIndianHot={!!representative.is_indian_hot}
+            />
           )}
-        </span>
-      </div>
-    );
-  }
+          {representative.special_instructions && (
+            <div className="ifn-meta">
+              Note: {representative.special_instructions}
+            </div>
+          )}
+        </div>
 
-  function renderSpecialInstructions() {
-    if (!order.special_instructions) return null;
-    return <div className="ifn-meta">Note: {order.special_instructions}</div>;
-  }
-
-  function renderOrderedPill() {
-    if (!order.is_submitted || isOverviewPage) return null;
-    return (
-      <span className="ifn-pill ifn-pill--green" style={{ fontSize: 10 }}>
-        Ordered
-      </span>
-    );
-  }
-
-  function renderSubmitToggle() {
-    if (!isEditMode || !isHostView) return null;
-    return (
-      <button
-        type="button"
-        onClick={onToggleSubmitted}
-        className={
-          order.is_submitted
-            ? "ifn-pill ifn-pill--green"
-            : "ifn-pill ifn-pill--accent"
-        }
-        style={{ fontSize: 10 }}
-        title={
-          order.is_submitted ? "Mark as not submitted" : "Mark as submitted"
-        }
-      >
-        {order.is_submitted ? "Submitted" : "Pending"}
-      </button>
-    );
-  }
-
-  return (
-    <div className={rowClass}>
-      <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 14.5,
-            fontWeight: 500,
-            marginBottom: 3,
-            color: "var(--ifn-ink)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexShrink: 0,
           }}
         >
-          {order.menu_items.name}
-          {renderNotSubmittedTag()}
+          {showOrderedPill && (
+            <span
+              className="ifn-pill ifn-pill--green"
+              style={{ fontSize: 10 }}
+            >
+              Ordered
+            </span>
+          )}
+          {showSubmitToggle && (
+            <OrderListItemSubmitToggle
+              isSubmitted={!!representative.is_submitted}
+              onToggle={onToggleSubmitted}
+            />
+          )}
+          <OrderListItemPrice
+            unitPrice={representative.menu_items.price}
+            quantity={quantity}
+          />
         </div>
-        {renderSpiceLine()}
-        {renderSpecialInstructions()}
       </div>
 
-      {renderOrderedPill()}
-
-      <div
-        className="ifn-num"
-        style={{ fontSize: 13.5, color: "var(--ifn-ink-2)" }}
-      >
-        ${order.menu_items.price.toFixed(2)}
-      </div>
-
-      {renderSubmitToggle()}
-
-      {!isOverviewPage && menuTrigger}
+      {showActions && (
+        <OrderListItemActions
+          quantity={quantity}
+          canEdit={canEdit}
+          canRemove={canRemove}
+          onIncrement={onIncrement}
+          onDecrement={onDecrement}
+          onEdit={onEdit}
+          onRemoveGroup={onRemoveGroup}
+        />
+      )}
     </div>
   );
 }
