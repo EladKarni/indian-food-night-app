@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Link from "next/link";
 import EventInfoOrderStrip from "@/components/EventInfoOrderStrip";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
@@ -82,6 +83,29 @@ function OrderPageContent() {
         <div className="ifn-screen-pad" style={{ paddingTop: 4 }}>
           <EventInfoOrderStrip />
           {renderCutoffBanner()}
+          <div
+            style={{
+              margin: "4px 0 14px",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 12,
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            <Link href="/menu" style={{ textDecoration: "underline" }}>
+              Browse full menu →
+            </Link>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <a
+              href="https://www.corianderindiangrill.com/ourmenu.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              Restaurant site ↗
+            </a>
+          </div>
           <OrderItem onOrderAdded={refetch} />
           <OrderList orders={orders} loading={loading} error={error} />
           {renderFinalizeArea()}
