@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { CreateOrderData, OrderWithMenuItem } from "@/hooks/useOrders";
 
 type User = {
-  id: string;
+  id?: string | null;
   email?: string;
   user_metadata?: {
     full_name?: string;
@@ -30,6 +30,7 @@ export const addOrderUtil = async (
     .insert({
       ...orderData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
+      user_id: options.user.id || null,
     })
     .select(
       `
@@ -53,11 +54,31 @@ export const removeOrderUtil = async (orderId: string): Promise<void> => {
   if (!supabase) {
     throw new Error("Supabase client not available");
   }
-  console.log("TEST");
   const { error } = await supabase.from("orders").delete().eq("id", orderId);
 
   if (error) {
     throw new Error(`Failed to remove order: ${error.message}`);
+  }
+};
+
+/**
+ * Add a simple order to the database without returning data
+ */
+export const addOrderSimpleUtil = async (orderData: CreateOrderData, userName?: string, userId?: string): Promise<void> => {
+  if (!supabase) {
+    throw new Error("Supabase client not available");
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .insert({
+      ...orderData,
+      user_name: userName,
+      user_id: userId || null,
+    });
+
+  if (error) {
+    throw new Error(`Failed to add order: ${error.message}`);
   }
 };
 
@@ -86,6 +107,7 @@ export const duplicateOrderUtil = async (
     .insert({
       ...duplicateData,
       user_name: options.user.user_metadata?.full_name || options.user.email,
+      user_id: options.user.id,
     })
     .select(
       `

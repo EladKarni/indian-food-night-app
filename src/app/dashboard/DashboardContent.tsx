@@ -4,47 +4,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders } from "@/hooks/useOrders";
 import Link from "next/link";
+import EventStatusButton from "@/components/dashboard/EventStatusButton";
+import EditEventButton from "@/components/dashboard/EditEventButton";
+import DeleteEventButton from "@/components/dashboard/DeleteEventButton";
+import OverviewButton from "@/components/dashboard/OverviewButton";
 
 export default function DashboardContent() {
   const { user } = useAuth();
-  const { activeEvent } = useActiveEvent();
+  const { activeEvent, refreshActiveEvent } = useActiveEvent();
   const { orders } = useOrders(activeEvent?.id);
 
-  const eventStatusButton = () => {
-    if (activeEvent) {
-      return (
-        <Link
-          href="/order"
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-        >
-          🎉 View Events
-        </Link>
-      );
-    }
-    return (
-      <Link
-        href="/create-event"
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-      >
-        📅 Host Event
-      </Link>
-    );
-  };
-
-  const overviewButton = () => {
-    // Show overview button only if there's an active event and it has more than one order
-    if (activeEvent && orders.length > 1) {
-      return (
-        <Link
-          href="/order-overview"
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
-        >
-          📋 View Order Overview
-        </Link>
-      );
-    }
-    return null;
-  };
+  // Check if current user is the host of the active event
+  const isHost = user && activeEvent && activeEvent.host_id === user.id;
 
   if (!user) return null;
 
@@ -69,8 +40,16 @@ export default function DashboardContent() {
 
                 {/* Action Buttons */}
                 <div className="space-y-3 mb-6 flex flex-col items-center">
-                  {eventStatusButton()}
-                  {overviewButton()}
+                  <EventStatusButton event={activeEvent} />
+                  {isHost && activeEvent && <EditEventButton eventId={activeEvent.id} />}
+                  {isHost && activeEvent && <DeleteEventButton eventId={activeEvent.id} userId={user.id} onDeleted={refreshActiveEvent} />}
+                  {activeEvent && orders.length > 1 && <OverviewButton />}
+                  <Link
+                    href="/order-history"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"
+                  >
+                    📜 Order History
+                  </Link>
                   <Link
                     href="/profile/edit"
                     className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3 px-4 rounded-2xl transition-colors text-sm"

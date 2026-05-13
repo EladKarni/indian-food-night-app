@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MenuProvider } from "@/contexts/MenuContext";
+import QueryProvider from "@/components/QueryProvider";
 import "./globals.css";
 import Header from "@/ui/Header";
 
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dim" className="scroll-smooth">
       <body className={inter.className}>
-        <AuthProvider>
-          <MenuProvider>
-            <Header />
-            {children}
-          </MenuProvider>
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <MenuProvider>
+              <Header />
+              {children}
+            </MenuProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

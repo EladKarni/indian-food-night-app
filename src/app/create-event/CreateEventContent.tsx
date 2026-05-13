@@ -3,9 +3,16 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getNextWednesday } from "@/util/dateUtils";
+import { calculateCutoffTimeString } from "@/util/timeUtils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import PageContainer from "@/ui/PageContainer";
+import Card from "@/ui/Card";
+import FormInput from "@/ui/FormInput";
+import FormLabel from "@/ui/FormLabel";
+import Button from "@/ui/button";
+import LoadingSpinner from "@/ui/LoadingSpinner";
 
 export default function CreateEventContent() {
   const { user } = useAuth();
@@ -17,15 +24,16 @@ export default function CreateEventContent() {
     time: "18:30",
     restaurant: "Coriander Indian Grill",
     location: user?.user_metadata.address,
+    cutoff_minutes_before: 60,
   });
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "cutoff_minutes_before" ? parseInt(value, 10) : value,
     }));
   };
 
@@ -42,6 +50,7 @@ export default function CreateEventContent() {
           location: formData.location,
           restaurant: formData.restaurant,
           start_time: formData.time,
+          cutoff_minutes_before: formData.cutoff_minutes_before,
           host_id: user.id,
         })
         .select()
@@ -61,7 +70,7 @@ export default function CreateEventContent() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <PageContainer variant="dashboard">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Create Event</h1>
         <p className="text-base-content/60">
@@ -70,89 +79,111 @@ export default function CreateEventContent() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="card bg-base-200 shadow-xl">
+        <Card variant="daisyui">
           <div className="card-body">
             <h2 className="card-title mb-4">Event Details</h2>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">
-                    <span className="label-text font-medium">Date *</span>
-                  </label>
-                  <input
+                  <FormLabel variant="daisyui" required>
+                    Date
+                  </FormLabel>
+                  <FormInput
                     type="date"
                     name="event_date"
                     value={formData.event_date}
                     onChange={handleInputChange}
-                    className="input input-bordered w-full"
+                    variant="daisyui"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="label">
-                    <span className="label-text font-medium">Time *</span>
-                  </label>
-                  <input
+                  <FormLabel variant="daisyui" required>
+                    Time
+                  </FormLabel>
+                  <FormInput
                     type="time"
                     name="time"
                     value={formData.time}
                     onChange={handleInputChange}
-                    className="input input-bordered w-full"
+                    variant="daisyui"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">
-                    Restaurant <i>(optional - defaults to Coriander)</i>
-                  </span>
-                </label>
-                <input
+                <FormLabel variant="daisyui">
+                  Order Cut-off <i>(optional - defaults to 1 hour before)</i>
+                </FormLabel>
+                <select
+                  name="cutoff_minutes_before"
+                  value={formData.cutoff_minutes_before}
+                  onChange={handleInputChange}
+                  className="select select-bordered w-full"
+                >
+                  <option value={30}>30 minutes before</option>
+                  <option value={60}>1 hour before (recommended)</option>
+                  <option value={90}>90 minutes before</option>
+                  <option value={120}>2 hours before</option>
+                  <option value={180}>3 hours before</option>
+                </select>
+                {formData.time && formData.event_date && (
+                  <p className="text-sm text-base-content/60 mt-1">
+                    Orders will close at {calculateCutoffTimeString(
+                      formData.event_date,
+                      formData.time,
+                      formData.cutoff_minutes_before
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FormLabel variant="daisyui">
+                  Restaurant <i>(optional - defaults to Coriander)</i>
+                </FormLabel>
+                <FormInput
                   type="text"
                   name="restaurant"
                   value={formData.restaurant}
                   onChange={handleInputChange}
                   placeholder="Coriander Indian Grill"
-                  className="input input-bordered w-full"
+                  variant="daisyui"
                 />
               </div>
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Location *</span>
-                </label>
-                <input
+                <FormLabel variant="daisyui" required>
+                  Location
+                </FormLabel>
+                <FormInput
                   type="text"
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
                   placeholder="Coriander Indian Grill"
-                  className="input input-bordered w-full"
+                  variant="daisyui"
                 />
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         <div className="flex gap-4 justify-end">
           <Link href="/dashboard" className="btn btn-outline">
             Cancel
           </Link>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <Button type="submit" variant="primary" disabled={loading}>
             {loading ? (
-              <>
-                <span className="loading loading-spinner loading-sm"></span>
-                Creating...
-              </>
+              <LoadingSpinner size="sm" text="Creating..." />
             ) : (
               "Create Event"
             )}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 }

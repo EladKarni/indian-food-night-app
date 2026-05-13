@@ -55,7 +55,7 @@ export const getAllMenuItems = async (): Promise<MenuItem[]> => {
       name: item.name,
       description: item.description || "",
       price: parseFloat(item.price) || 0,
-      spiceLevel: item.default_spice_level || item.spice_level || 3,
+      spiceLevel: item.default_spice_level || item.spice_level || 0,
       vegetarian: item.is_vegetarian || item.vegetarian || false,
       vegan: item.is_vegan || item.vegan || false,
     }));

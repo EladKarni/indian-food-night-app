@@ -1,14 +1,16 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import Link from "next/link";
-import IFNInfo from "@/components/IFNInfo";
+import EventInfo from "@/components/EventInfo";
 import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
+import { CutoffWarningBanner } from "@/components/CutoffWarningBanner";
 import { useOrders } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestName } from "@/hooks/useGuestName";
+import { useHostProfile } from "@/hooks/useHostProfile";
+import { calculateCutoffStatus, formatCutoffTime } from "@/util/cutoffUtil";
 import Button from "@/ui/button";
 
 function OrderPageContent() {
@@ -18,15 +20,19 @@ function OrderPageContent() {
   );
   const { user } = useAuth();
   const { guestName } = useGuestName();
+  const { hostProfile } = useHostProfile(activeEvent?.host_id ?? undefined);
   const [finalizing, setFinalizing] = useState(false);
 
-  // Get current user's orders to check count
+  const cutoffStatus = calculateCutoffStatus(activeEvent);
+
   const currentUserName =
     user?.user_metadata?.full_name || user?.email || guestName;
   const userOrders = orders.filter(
     (order) => order.user_name === currentUserName
   );
-  const hasMultipleOrders = userOrders.length > 1;
+
+  // Check if all user orders are already submitted
+  const allOrdersSubmitted = userOrders.length > 0 && userOrders.every(order => order.is_submitted);
 
   return (
     <main className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
@@ -34,13 +40,21 @@ function OrderPageContent() {
         {/* Header */}
         <div className="bg-orange-400 text-center py-3 px-4 relative">
           <h1 className="text-xs font-medium text-slate-700 leading-tight">
-            Ordering From: Coriander India Grill
+            Place Your Order
           </h1>
         </div>
 
         <div className="p-6 space-y-6">
           {/* User Info */}
-          <IFNInfo className="mb-8" />
+          <EventInfo className="mb-8" />
+
+          {/* Cutoff Warning Banner */}
+          {cutoffStatus?.isPastCutoff && cutoffStatus.cutoffDateTime && (
+            <CutoffWarningBanner
+              hostName={hostProfile?.full_name || hostProfile?.email || "the host"}
+              cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
+            />
+          )}
 
           {/* Order Section */}
           <div>
@@ -53,12 +67,15 @@ function OrderPageContent() {
               orders={orders}
               loading={loading}
               error={error}
-              reload={refetch}
             />
           </div>
 
-          {/* Order Overview Button - Show when user has orders */}
-          {userOrders.length > 0 && (
+          {/* Order Overview Button - Reserve space while loading to prevent layout shift */}
+          {loading ? (
+            <div className="pt-4 border-t border-slate-400/20 space-y-3">
+              <div className="skeleton h-12 w-full rounded-2xl bg-slate-300/60" />
+            </div>
+          ) : userOrders.length > 0 ? (
             <div className="pt-4 border-t border-slate-400/20 space-y-3">
               <Button
                 fullWidth={true}
@@ -66,27 +83,36 @@ function OrderPageContent() {
                 className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={finalizing}
                 onClick={async () => {
-                  setFinalizing(true);
-                  try {
-                    // Mark all user's orders as submitted
-                    const updatePromises = userOrders.map((order) =>
-                      updateOrder(order.id, { is_submitted: true })
-                    );
-                    await Promise.all(updatePromises);
-
-                    // Navigate to overview page
+                  if (allOrdersSubmitted) {
+                    // If all orders are already submitted, just navigate to overview
                     window.location.href = "/order-overview";
-                  } catch (error) {
-                    console.error("Failed to finalize orders:", error);
-                    alert("Failed to finalize orders. Please try again.");
-                    setFinalizing(false);
+                  } else {
+                    setFinalizing(true);
+                    try {
+                      // Mark all user's orders as submitted
+                      const updatePromises = userOrders.map((order) =>
+                        updateOrder(order.id, { is_submitted: true })
+                      );
+                      await Promise.all(updatePromises);
+
+                      // Navigate to overview page
+                      window.location.href = "/order-overview";
+                    } catch (error) {
+                      console.error("Failed to finalize orders:", error);
+                      alert("Failed to finalize orders. Please try again.");
+                      setFinalizing(false);
+                    }
                   }
                 }}
               >
-                {finalizing ? "Finalizing..." : "Finalize Order"}
+                {finalizing
+                  ? "Finalizing..."
+                  : allOrdersSubmitted
+                    ? "Order Overview"
+                    : "Finalize Order"}
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </main>

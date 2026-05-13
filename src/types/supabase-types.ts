@@ -42,6 +42,7 @@ export type Database = {
       events: {
         Row: {
           created_at: string | null
+          cutoff_minutes_before: number | null
           event_date: string
           host_id: string | null
           id: string
@@ -52,6 +53,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          cutoff_minutes_before?: number | null
           event_date: string
           host_id?: string | null
           id?: string
@@ -62,6 +64,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          cutoff_minutes_before?: number | null
           event_date?: string
           host_id?: string | null
           id?: string
@@ -80,8 +83,54 @@ export type Database = {
           },
         ]
       }
+      host_messages: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          menu_item_id: string | null
+          message: string
+          sender_id: string | null
+          sender_name: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          menu_item_id?: string | null
+          message: string
+          sender_id?: string | null
+          sender_name: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          menu_item_id?: string | null
+          message?: string
+          sender_id?: string | null
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_messages_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -92,6 +141,7 @@ export type Database = {
           restaurant_name: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -102,6 +152,7 @@ export type Database = {
           restaurant_name: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -123,6 +174,7 @@ export type Database = {
           menu_item_id: string
           special_instructions: string | null
           spice_level: number | null
+          user_id: string | null
           user_name: string | null
         }
         Insert: {
@@ -134,6 +186,7 @@ export type Database = {
           menu_item_id: string
           special_instructions?: string | null
           spice_level?: number | null
+          user_id?: string | null
           user_name?: string | null
         }
         Update: {
@@ -145,6 +198,7 @@ export type Database = {
           menu_item_id?: string
           special_instructions?: string | null
           spice_level?: number | null
+          user_id?: string | null
           user_name?: string | null
         }
         Relationships: [
@@ -174,6 +228,7 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string | null
+          venmo_username: string | null
         }
         Insert: {
           address?: string | null
@@ -184,6 +239,7 @@ export type Database = {
           id: string
           phone?: string | null
           updated_at?: string | null
+          venmo_username?: string | null
         }
         Update: {
           address?: string | null
@@ -194,6 +250,7 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string | null
+          venmo_username?: string | null
         }
         Relationships: []
       }

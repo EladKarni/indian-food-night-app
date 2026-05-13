@@ -6,11 +6,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Button from "@/ui/button";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import FormInput from "@/ui/FormInput";
+import FormTextarea from "@/ui/FormTextarea";
+import FormLabel from "@/ui/FormLabel";
+import LoadingSpinner from "@/ui/LoadingSpinner";
+import PageContainer from "@/ui/PageContainer";
+import Card from "@/ui/Card";
 
 interface ProfileData {
   full_name: string;
   email: string;
   address: string;
+  venmo_username: string;
 }
 
 function EditProfilePageContent() {
@@ -22,6 +29,7 @@ function EditProfilePageContent() {
     full_name: "",
     email: "",
     address: "",
+    venmo_username: "",
   });
 
   useEffect(() => {
@@ -32,6 +40,7 @@ function EditProfilePageContent() {
       full_name: user.user_metadata?.full_name || "",
       email: user.email || "",
       address: "",
+      venmo_username: "",
     });
 
     // Fetch existing profile data
@@ -59,6 +68,7 @@ function EditProfilePageContent() {
           full_name: data.full_name || user.user_metadata?.full_name || "",
           email: data.email || user.email || "",
           address: data.address || "",
+          venmo_username: data.venmo_username || "",
         });
       }
     } catch (error) {
@@ -80,6 +90,7 @@ function EditProfilePageContent() {
           email: profile.email,
           full_name: profile.full_name,
           address: profile.address,
+          venmo_username: profile.venmo_username.trim().replace(/^@/, "") || null,
           updated_at: new Date().toISOString(),
         });
 
@@ -91,8 +102,15 @@ function EditProfilePageContent() {
 
       router.push("/dashboard");
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Failed to save profile. Please try again.");
+      const err = error as { message?: string; code?: string; details?: string; hint?: string };
+      console.error("Error saving profile:", {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        raw: error,
+      });
+      alert(`Failed to save profile: ${err?.message || "Unknown error"}`);
     } finally {
       setSaving(false);
     }
@@ -105,8 +123,8 @@ function EditProfilePageContent() {
   if (!user) return null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-200 via-rose-300 to-slate-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto bg-gradient-to-b from-orange-300 to-orange-200 rounded-3xl overflow-hidden shadow-2xl">
+    <PageContainer variant="gradient">
+      <Card variant="auth" className="w-full max-w-md">
         {/* Header */}
         <div className="bg-orange-400 text-center py-3 px-4 relative">
           <h1 className="text-lg font-semibold text-slate-700">
@@ -117,20 +135,18 @@ function EditProfilePageContent() {
         <div className="p-6 space-y-4">
           {loading ? (
             <div className="text-center py-8">
-              <div className="loading loading-spinner loading-md mb-4"></div>
-              <p className="text-slate-700">Loading profile...</p>
+              <LoadingSpinner size="lg" text="Loading profile..." />
             </div>
           ) : (
             <>
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <FormLabel>
                   Full Name
-                </label>
-                <input
+                </FormLabel>
+                <FormInput
                   type="text"
                   value={profile.full_name}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
                   placeholder="Full name from your account"
                   readOnly
                   disabled
@@ -142,13 +158,12 @@ function EditProfilePageContent() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <FormLabel>
                   Email
-                </label>
-                <input
+                </FormLabel>
+                <FormInput
                   type="email"
                   value={profile.email}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-600 cursor-not-allowed"
                   placeholder="Email from your account"
                   readOnly
                   disabled
@@ -160,15 +175,36 @@ function EditProfilePageContent() {
 
               {/* Address */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <FormLabel>
                   Address
-                </label>
-                <textarea
+                </FormLabel>
+                <FormTextarea
                   value={profile.address}
                   onChange={(e) => handleAddressChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none h-20 resize-none"
                   placeholder="Enter your address"
+                  rows={3}
                 />
+              </div>
+
+              {/* Venmo Username */}
+              <div>
+                <FormLabel>
+                  Venmo Username
+                </FormLabel>
+                <FormInput
+                  type="text"
+                  value={profile.venmo_username}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      venmo_username: e.target.value,
+                    }))
+                  }
+                  placeholder="your-venmo-handle"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  When you host, guests will see a pay link that opens Venmo.
+                </p>
               </div>
 
               {/* Action Buttons */}
@@ -196,8 +232,8 @@ function EditProfilePageContent() {
             </>
           )}
         </div>
-      </div>
-    </main>
+      </Card>
+    </PageContainer>
   );
 }
 
