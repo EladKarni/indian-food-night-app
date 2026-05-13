@@ -235,3 +235,172 @@
   0%,100% { background-position: 200% 0; }
   50% { background-position: -200% 0; }
 }
+
+/* ──────────────────────────────────────────────────────────────
+ * Layout helpers (extracted from repeated inline patterns)
+ * ────────────────────────────────────────────────────────────── */
+
+/* Vertical stack */
+.ifn-stack       { display: flex; flex-direction: column; gap: 10px; }
+.ifn-stack-sm    { display: flex; flex-direction: column; gap: 6px; }
+.ifn-stack-lg    { display: flex; flex-direction: column; gap: 16px; }
+
+/* Horizontal row */
+.ifn-row         { display: flex; align-items: center; gap: 10px; }
+.ifn-row-between { display: flex; align-items: center; justify-content: space-between; }
+.ifn-row-baseline { display: flex; align-items: baseline; justify-content: space-between; }
+
+/* Page shell — the recurring 420px centered column */
+.ifn-page-shell {
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+/* Button size modifiers */
+.ifn-btn--sm { padding: 8px 14px; font-size: 13px; }
+.ifn-btn--xs { padding: 8px 12px; font-size: 12px; }
+
+/* A pill rendered as a button should not look like a default button */
+button.ifn-pill { border: 0; cursor: pointer; }
+
+/* Topbar title block (eyebrow + title) */
+.ifn-topbar-title-block { text-align: center; flex: 1; }
+.ifn-topbar-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ifn-muted);
+  margin-bottom: 2px;
+}
+.ifn-topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ifn-topbar-spacer { width: 38px; height: 38px; }
+
+/* Totals row — $ rows that align label/value */
+.ifn-totals-row {
+  display: flex;
+  justify-content: space-between;
+}
+.ifn-totals-grand {
+  color: var(--ifn-ink);
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: 6px;
+}
+
+/* Status dot — small colored circle inside chips/pills/banners */
+.ifn-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ifn-muted);
+}
+.ifn-status-dot--primary { background: var(--ifn-primary); }
+.ifn-status-dot--green   { background: var(--ifn-green); }
+.ifn-status-dot--amber   { background: var(--ifn-amber); }
+.ifn-status-dot--chili   { background: var(--ifn-chili); }
+.ifn-status-dot--sm      { width: 5px; height: 5px; }
+
+/* Suspense fallback wrapper */
+.ifn-suspense-fallback {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+/* Empty / loading / error placeholder */
+.ifn-empty {
+  text-align: center;
+  padding: 16px 0;
+  color: var(--ifn-muted);
+  font-size: 13px;
+}
+.ifn-empty--lg     { padding: 32px 0; }
+.ifn-empty--error  { color: var(--ifn-chili); font-size: 13px; }
+
+/* Small muted secondary text (hints, char counters, captions) */
+.ifn-meta {
+  font-size: 11px;
+  color: var(--ifn-muted);
+  margin-top: 4px;
+}
+
+/* Icon tile — the 40×40/44×44 colored square that frames an icon */
+.ifn-icon-tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ifn-icon-tile--primary {
+  background: var(--ifn-primary);
+  color: #fff;
+}
+.ifn-icon-tile--soft {
+  background: var(--ifn-primary-soft);
+  color: var(--ifn-primary);
+}
+.ifn-icon-tile--lg { width: 44px; height: 44px; border-radius: 14px; }
+
+/* Icon button — small square button used for popup-menu triggers etc. */
+.ifn-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--ifn-surface-2);
+  color: var(--ifn-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Avatar — circular initial/photo */
+.ifn-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ifn-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ifn-avatar--sm { width: 26px; height: 26px; font-size: 11px; }
+
+/* Dark card variant (e.g. host running-total card) */
+.ifn-card--dark {
+  background: var(--ifn-ink);
+  color: #fff;
+  border-color: transparent;
+}
+.ifn-eyebrow--on-dark { color: var(--ifn-subtle); }
+
+/* Order list row — used by OrderListItem */
+.ifn-order-row {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--ifn-border);
+}
+.ifn-order-row:last-child,
+.ifn-order-row--no-divider { border-bottom: 0; }
+.ifn-order-row--dim { opacity: 0.55; }
