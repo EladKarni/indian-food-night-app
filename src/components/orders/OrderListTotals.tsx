@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderWithMenuItem } from "@/hooks/useOrders";
+import VenmoPayCard from "./VenmoPayCard";
 
 interface OrderListTotalsProps {
   orders: OrderWithMenuItem[];
@@ -8,6 +9,14 @@ interface OrderListTotalsProps {
   shouldShowAllOrders: boolean;
   hostVenmoUsername?: string | null;
   hostName?: string | null;
+  eventDate?: string | null;
+}
+
+function formatMemoDate(eventDate: string | null | undefined) {
+  if (!eventDate) return null;
+  const [y, m, d] = eventDate.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export default function OrderListTotals({
@@ -16,13 +25,13 @@ export default function OrderListTotals({
   shouldShowAllOrders,
   hostVenmoUsername,
   hostName,
+  eventDate,
 }: OrderListTotalsProps) {
-  // For hosts, exclude unsubmitted orders from calculation
   const ordersForCalculation = isHostView
     ? orders.filter((order) => order.is_submitted)
     : orders;
 
-  const total = ordersForCalculation.reduce(
+  const sub = ordersForCalculation.reduce(
     (sum, order) => sum + order.menu_items.price,
     0
   );
@@ -31,59 +40,56 @@ export default function OrderListTotals({
     return null;
   }
 
-  const totalWithTax = total * 1.07;
-  const venmoUsername = hostVenmoUsername?.trim().replace(/^@/, "");
-  // Only guests paying their own subtotal get the pay link — hosts seeing
-  // the group total don't pay themselves.
-  const showVenmoLink =
-    !isHostView && !!venmoUsername && totalWithTax > 0;
-
-  // venmo:// deep-links open the native app on mobile; the https URL is the
-  // fallback for desktop/web, which Venmo handles via its own routing.
-  const venmoNote = encodeURIComponent("Indian Food Night");
-  const venmoAmount = totalWithTax.toFixed(2);
-  const venmoWebUrl = venmoUsername
-    ? `https://venmo.com/${venmoUsername}?txn=pay&amount=${venmoAmount}&note=${venmoNote}`
-    : "";
+  const tax = sub * 0.07;
+  const total = sub + tax;
+  const handle = hostVenmoUsername?.trim().replace(/^@/, "");
+  const showVenmoCard = !isHostView && !!handle && total > 0;
+  const memoDate = formatMemoDate(eventDate);
+  const memo = memoDate ? `IFN · ${memoDate}` : "Indian Food Night";
 
   return (
-    <div className="mt-4 pt-4 border-t border-slate-300 space-y-2">
-      {/* Subtotal */}
-      <div className="flex justify-between items-center">
-        <span className="text-slate-700">
-          {shouldShowAllOrders ? "Group Subtotal:" : "Subtotal:"}
-        </span>
-        <span className="text-slate-700">${total.toFixed(2)}</span>
-      </div>
-
-      {/* Tax (7%) */}
-      <div className="flex justify-between items-center">
-        <span className="text-slate-700">Tax (7%):</span>
-        <span className="text-slate-700">${(total * 0.07).toFixed(2)}</span>
-      </div>
-
-      {/* Total with tax */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-        <span className="text-slate-800 font-bold text-lg">
-          {shouldShowAllOrders ? "Group Total:" : "Total:"}
-        </span>
-        <span className="text-slate-800 font-bold text-lg">
-          ${totalWithTax.toFixed(2)}
-        </span>
-      </div>
-
-      {showVenmoLink && (
-        <a
-          href={venmoWebUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 flex items-center justify-center gap-2 w-full bg-[#3D95CE] hover:bg-[#327CB0] text-white font-medium py-3 rounded-2xl transition-colors shadow-sm hover:shadow-md"
+    <div style={{ marginTop: 14 }}>
+      <hr className="ifn-hr" style={{ margin: "12px 0" }} />
+      <div
+        className="ifn-num"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          fontSize: 13,
+          color: "var(--ifn-muted)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>{shouldShowAllOrders ? "Group subtotal" : "Subtotal"}</span>
+          <span>${sub.toFixed(2)}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>Tax (7%)</span>
+          <span>${tax.toFixed(2)}</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            color: "var(--ifn-ink)",
+            fontWeight: 600,
+            fontSize: 15,
+            marginTop: 6,
+          }}
         >
-          <span className="text-lg font-bold">V</span>
-          <span>
-            Pay {hostName || "host"} ${venmoAmount} on Venmo
-          </span>
-        </a>
+          <span>{shouldShowAllOrders ? "Group total" : "Your share"}</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {showVenmoCard && handle && (
+        <VenmoPayCard
+          amount={total}
+          hostName={hostName}
+          hostVenmoUsername={handle}
+          memo={memo}
+        />
       )}
     </div>
   );

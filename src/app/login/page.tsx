@@ -1,25 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AuthLayout from "@/ui/AuthLayout";
-import FormInput from "@/ui/FormInput";
-import FormLink from "@/ui/FormLink";
-import BackButton from "@/ui/BackButton";
-import AlertMessage from "@/ui/AlertMessage";
-import LoadingSpinner from "@/ui/LoadingSpinner";
-import Button from "@/ui/button";
-import Icon from "@/ui/Icon";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { supabase } from "@/lib/supabase";
+import AuthField from "@/components/auth/AuthField";
+import {
+  BackIcon,
+  GoogleIcon,
+  LockIcon,
+  MailIcon,
+} from "@/components/auth/icons";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const router = useRouter();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +35,13 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (signInError) {
+      setError(signInError.message);
     } else {
       setMessage("Successfully signed in!");
       router.push("/dashboard");
@@ -49,118 +49,222 @@ export default function LoginPage() {
     setLoading(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      setError("Supabase is not configured.");
+      return;
+    }
+    setGoogleLoading(true);
+    setError("");
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    if (oauthError) {
+      setGoogleLoading(false);
+      setError(oauthError.message);
+    }
+  };
+
   return (
-    <AuthLayout
-      backButton={<BackButton href="/" label="Back to Home" showLabel />}
-    >
-      {!supabase && (
-        <AlertMessage type="error" className="mb-6">
-          ⚠️ Supabase not configured. Please set up your environment variables.
-        </AlertMessage>
-      )}
-
-      {/* Illustration Area */}
-      <div className="text-center mb-8">
-        <div className="w-32 h-32 mx-auto mb-6 relative">
-          {/* Simple illustration using CSS */}
-          <div className="absolute inset-0 bg-orange-400 rounded-lg transform rotate-12 shadow-lg"></div>
-          <div className="absolute top-2 left-2 w-28 h-28 bg-orange-500 rounded-lg shadow-md"></div>
-          <div className="absolute top-4 left-4 w-24 h-20 bg-orange-300 rounded-md"></div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-700 rounded-full shadow-lg"></div>
-          <div className="absolute -bottom-1 -left-1 w-6 h-12 bg-green-600 rounded-full"></div>
+    <main className="ifn-screen ifn-app">
+      <div
+        style={{
+          maxWidth: 420,
+          margin: "0 auto",
+          width: "100%",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div className="ifn-topbar">
+          <Link
+            href="/"
+            className="ifn-topbar-btn"
+            style={{ textDecoration: "none" }}
+            aria-label="Back"
+          >
+            <BackIcon color="var(--ifn-ink-2)" />
+          </Link>
+          <span style={{ flex: 1 }} />
+          <span style={{ width: 38, height: 38 }} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome Back</h2>
-        <p className="text-slate-600 text-sm italic">Login to Indian Food Night</p>
-      </div>
 
-      {/* Google Sign In Button */}
-      <div className="mb-6">
-        <GoogleSignInButton mode="signin" onError={(err) => setError(err)} />
-      </div>
+        <form
+          onSubmit={handleSignIn}
+          style={{
+            flex: 1,
+            padding: "8px 28px 32px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ marginBottom: 28 }}>
+            <div className="ifn-eyebrow" style={{ marginBottom: 8 }}>
+              Welcome back
+            </div>
+            <div
+              className="ifn-display"
+              style={{ fontSize: 44, lineHeight: 1, letterSpacing: "-0.015em" }}
+            >
+              Pull up a
+              <br />
+              <span
+                style={{ fontStyle: "italic", color: "var(--ifn-primary)" }}
+              >
+                chair.
+              </span>
+            </div>
+            <p
+              style={{
+                marginTop: 14,
+                color: "var(--ifn-muted)",
+                fontSize: 14,
+                lineHeight: 1.45,
+              }}
+            >
+              Sign back into Indian Food Night to join Wednesday&apos;s order.
+            </p>
+          </div>
 
-      {/* Separator */}
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-300"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-orange-200 text-slate-700">
-            or continue with email
-          </span>
-        </div>
-      </div>
-
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-        {/* Email Input */}
-        <FormInput
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          variant="auth"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          leftIcon={<Icon name="user" size={16} className="text-slate-600" />}
-          className="pl-12 pr-4 py-3 bg-white/70 border-none rounded-2xl placeholder-slate-500 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white"
-        />
-
-        {/* Password Input */}
-        <FormInput
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          variant="auth"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          leftIcon={<Icon name="lock" size={16} className="text-slate-600" />}
-          className="pl-12 pr-4 py-3 bg-white/70 border-none rounded-2xl placeholder-slate-500 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white"
-        />
-
-        {/* Forgot Password Link */}
-        <div className="text-center">
           <button
             type="button"
-            className="text-slate-600 text-sm hover:text-slate-800 transition-colors"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || !supabase}
+            className="ifn-btn ifn-btn--ghost ifn-btn--full"
+            style={{
+              background: "var(--ifn-surface)",
+              padding: "14px 16px",
+              fontSize: 14.5,
+            }}
           >
-            Forgot your password?
+            <GoogleIcon />
+            {googleLoading ? "Opening Google…" : "Continue with Google"}
           </button>
-        </div>
 
-        {error && <AlertMessage type="error">{error}</AlertMessage>}
-
-        {message && <AlertMessage type="success">{message}</AlertMessage>}
-
-        {/* Sign In Button */}
-        <Button
-          type="submit"
-          onClick={() => handleSignIn(new Event("submit") as any)}
-          disabled={loading}
-          fullWidth={true}
-          variant="primary"
-          className="py-3 px-6 rounded-2xl"
-        >
-          {loading ? (
-            <LoadingSpinner
-              size="sm"
-              text="Signing In..."
-              className="text-white"
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              margin: "20px 0 16px",
+            }}
+          >
+            <div
+              style={{ flex: 1, height: 1, background: "var(--ifn-border)" }}
             />
-          ) : (
-            "Sign In"
-          )}
-        </Button>
+            <span className="ifn-eyebrow" style={{ fontSize: 10 }}>
+              or with email
+            </span>
+            <div
+              style={{ flex: 1, height: 1, background: "var(--ifn-border)" }}
+            />
+          </div>
 
-        {/* Sign Up Link */}
-        <div className="text-center pt-4">
-          <span className="text-slate-600 text-sm">Don&apos;t have an account? </span>
-          <FormLink href="/signup">Sign Up</FormLink>
-        </div>
-      </form>
-    </AuthLayout>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <AuthField
+              icon={<MailIcon color="var(--ifn-muted)" />}
+              placeholder="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              name="email"
+              autoComplete="email"
+              required
+            />
+            <AuthField
+              icon={<LockIcon color="var(--ifn-muted)" />}
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              name="password"
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          <div style={{ textAlign: "right", marginTop: 10 }}>
+            <span
+              style={{
+                fontSize: 12.5,
+                color: "var(--ifn-muted)",
+                borderBottom: "1px solid var(--ifn-border-strong)",
+                paddingBottom: 1,
+              }}
+            >
+              Forgot password?
+            </span>
+          </div>
+
+          {error && (
+            <div
+              style={{
+                marginTop: 14,
+                fontSize: 13,
+                color: "var(--ifn-chili)",
+                background: "var(--ifn-pill-chili-bg)",
+                padding: "10px 12px",
+                borderRadius: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+          {message && (
+            <div
+              style={{
+                marginTop: 14,
+                fontSize: 13,
+                color: "var(--ifn-green)",
+                background: "var(--ifn-pill-green-bg)",
+                padding: "10px 12px",
+                borderRadius: 12,
+              }}
+            >
+              {message}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !supabase}
+            className="ifn-btn ifn-btn--primary ifn-btn--full"
+            style={{ marginTop: 18 }}
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: 13,
+              color: "var(--ifn-muted)",
+              marginTop: 22,
+            }}
+          >
+            First time here?{" "}
+            <Link
+              href="/signup"
+              style={{
+                color: "var(--ifn-ink)",
+                fontWeight: 500,
+                borderBottom: "1px solid var(--ifn-border-strong)",
+                paddingBottom: 1,
+                textDecoration: "none",
+              }}
+            >
+              Create an account
+            </Link>
+          </div>
+        </form>
+      </div>
+    </main>
   );
 }

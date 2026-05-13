@@ -1,4 +1,4 @@
-import { SPICY_STUFF_GUILLERMO } from "@/constants/spicyStuffGuillermo";
+import IndianHotToggle from "./IndianHotToggle";
 
 interface SpiceSelectorProps {
   spiceLevel: number;
@@ -8,84 +8,86 @@ interface SpiceSelectorProps {
   shouldShow?: boolean;
 }
 
+const MAX_SPICE = 10;
+
 const SpiceSelector = ({
   spiceLevel,
   onSpiceLevelChange,
   indianHot,
   onIndianHotChange,
-  shouldShow = true
+  shouldShow = true,
 }: SpiceSelectorProps) => {
   if (!shouldShow) {
     return null;
   }
 
   return (
-    <div>
-      {/* Slider and Controls Row */}
-      <div className="flex items-center space-x-2 mb-2">
-        <span className="text-xs text-[#FF3B30] min-w-[50px]">Spice Level</span>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          value={spiceLevel}
-          onChange={(e) => onSpiceLevelChange(parseInt(e.target.value))}
-          className="flex-1 h-2 bg-slate-400 rounded-lg appearance-none cursor-pointer slider"
-          style={{
-            background: `linear-gradient(to right, #FF3B30 0%, #FF3B30 ${
-              spiceLevel * 10
-            }%, #94a3b8 ${spiceLevel * 10}%, #94a3b8 100%)`,
-          }}
-        />
-        <span className="text-[#FF3B30] font-bold text-xl min-w-[20px] text-center">
-          {spiceLevel}
+    <div style={{ marginBottom: 14 }}>
+      <div className="ifn-row-baseline" style={{ marginBottom: 10 }}>
+        <span className="ifn-label" style={{ margin: 0 }}>
+          Spice level
+        </span>
+        <span
+          style={{ fontSize: 13.5, color: "var(--ifn-ink)", fontWeight: 500 }}
+        >
+          <span className="ifn-num" style={{ color: "var(--ifn-chili)" }}>
+            {spiceLevel}
+          </span>
+          <span style={{ color: "var(--ifn-subtle)" }}> / {MAX_SPICE}</span>
         </span>
       </div>
 
-      {/* Indian Hot Checkbox - Only show if spice level is 10 */}
-      {spiceLevel === 10 && (
-        <div className="flex justify-between mt-2 mb-4">
-          <label className="flex items-center space-x-2 text-xs text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={indianHot}
-              onChange={(e) => onIndianHotChange(e.target.checked)}
-              className="form-checkbox h-3 w-3 text-orange-500 rounded focus:ring-orange-400 focus:ring-offset-0"
-            />
-            <span>Indian Hot 🌶️</span>
-          </label>
-          {indianHot && (
-            <div className="text-xs text-[#FF3B30] overflow-auto">
-              {
-                SPICY_STUFF_GUILLERMO[
-                  Math.floor(Math.random() * SPICY_STUFF_GUILLERMO.length)
-                ]
-              }
-            </div>
-          )}
-        </div>
-      )}
+      <div
+        className="ifn-spice-track"
+        style={{ marginBottom: 8, position: "relative" }}
+      >
+        <div
+          className="ifn-spice-fill"
+          style={{ width: `${spiceLevel * 10}%` }}
+        />
+        <div
+          className="ifn-spice-thumb"
+          style={{ left: `${spiceLevel * 10}%` }}
+        />
+        <input
+          type="range"
+          min="0"
+          max={MAX_SPICE}
+          value={spiceLevel}
+          onChange={(e) => onSpiceLevelChange(parseInt(e.target.value, 10))}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "100%",
+            height: 32,
+            margin: 0,
+            opacity: 0,
+            cursor: "pointer",
+            WebkitAppearance: "none",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 10.5,
+          color: "var(--ifn-muted)",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+        }}
+      >
+        <span>Mild</span>
+        <span>Medium</span>
+        <span>Indian Hot</span>
+      </div>
 
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #ff3b30;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #ff3b30;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-      `}</style>
+      {spiceLevel === MAX_SPICE && (
+        <IndianHotToggle checked={indianHot} onChange={onIndianHotChange} />
+      )}
     </div>
   );
 };
