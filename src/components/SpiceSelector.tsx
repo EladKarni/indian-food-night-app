@@ -37,7 +37,10 @@ const SpiceSelector = ({
         </span>
       </div>
 
-      <div className="ifn-spice-track" style={{ marginBottom: 8 }}>
+      <div
+        className="ifn-spice-track"
+        style={{ marginBottom: 8, position: "relative" }}
+      >
         <div
           className="ifn-spice-fill"
           style={{ width: `${spiceLevel * 10}%` }}
@@ -46,22 +49,27 @@ const SpiceSelector = ({
           className="ifn-spice-thumb"
           style={{ left: `${spiceLevel * 10}%` }}
         />
+        <input
+          type="range"
+          min="0"
+          max={MAX_SPICE}
+          value={spiceLevel}
+          onChange={(e) => onSpiceLevelChange(parseInt(e.target.value, 10))}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "100%",
+            height: 32,
+            margin: 0,
+            opacity: 0,
+            cursor: "pointer",
+            WebkitAppearance: "none",
+          }}
+        />
       </div>
-      <input
-        type="range"
-        min="0"
-        max={MAX_SPICE}
-        value={spiceLevel}
-        onChange={(e) => onSpiceLevelChange(parseInt(e.target.value, 10))}
-        style={{
-          width: "100%",
-          opacity: 0,
-          position: "relative",
-          marginTop: -16,
-          height: 24,
-          cursor: "pointer",
-        }}
-      />
       <div
         style={{
           display: "flex",
