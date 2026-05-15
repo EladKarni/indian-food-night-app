@@ -121,6 +121,7 @@ export const OrderList = ({
           onDuplicate={actions.handleDuplicateOrder}
           onEdit={actions.handleEditOrder}
           onToggleSubmitted={actions.handleToggleSubmitted}
+          onTogglePaid={actions.handleToggleAttendeePaid}
         />
       ))}
 

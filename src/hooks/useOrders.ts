@@ -103,6 +103,26 @@ export const useOrders = (eventId?: string) => {
     onSuccess: invalidate,
   });
 
+  const setAttendeePaidMutation = useMutation({
+    mutationFn: async (vars: {
+      eventId: string;
+      userName: string;
+      isPaid: boolean;
+    }) => {
+      if (!supabase) {
+        throw new Error("Supabase client not available");
+      }
+      const { error } = await supabase
+        .from("orders")
+        .update({ is_paid: vars.isPaid })
+        .eq("event_id", vars.eventId)
+        .eq("user_name", vars.userName);
+
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
   const addOrder = useCallback(
     (orderData: CreateOrderData, guestName?: string) =>
       addMutation.mutateAsync({ orderData, guestName }),
@@ -120,12 +140,21 @@ export const useOrders = (eventId?: string) => {
     [removeMutation]
   );
 
+  const setAttendeePaid = useCallback(
+    (eventId: string, userName: string, isPaid: boolean) =>
+      setAttendeePaidMutation.mutateAsync({ eventId, userName, isPaid }),
+    [setAttendeePaidMutation]
+  );
+
   const refetch = useCallback(async () => {
     await queryRefetch();
   }, [queryRefetch]);
 
   const mutationError =
-    addMutation.error || updateMutation.error || removeMutation.error;
+    addMutation.error ||
+    updateMutation.error ||
+    removeMutation.error ||
+    setAttendeePaidMutation.error;
 
   return {
     orders: data ?? [],
@@ -133,7 +162,8 @@ export const useOrders = (eventId?: string) => {
     actionLoading:
       addMutation.isPending ||
       updateMutation.isPending ||
-      removeMutation.isPending,
+      removeMutation.isPending ||
+      setAttendeePaidMutation.isPending,
     error: error
       ? error.message
       : mutationError
@@ -142,10 +172,12 @@ export const useOrders = (eventId?: string) => {
     addOrder,
     updateOrder,
     removeOrder,
+    setAttendeePaid,
     clearError: () => {
       addMutation.reset();
       updateMutation.reset();
       removeMutation.reset();
+      setAttendeePaidMutation.reset();
     },
     refetch,
   };
