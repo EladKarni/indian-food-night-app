@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
   useMutation,
   useQuery,
@@ -36,6 +36,32 @@ export const useOrders = (eventId?: string) => {
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: orderKeys.list(eventId) });
+
+  useEffect(() => {
+    if (!supabase || !eventId) return;
+    const channel = supabase
+      .channel(`orders-${eventId}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { event_id?: string };
+          if (row?.event_id !== eventId) return;
+          console.log("[realtime] orders change", payload);
+          queryClient.invalidateQueries({ queryKey: orderKeys.list(eventId) });
+        }
+      )
+      .subscribe((status, err) => {
+        console.log("[realtime] subscribe status", status, err);
+      });
+    return () => {
+      supabase?.removeChannel(channel);
+    };
+  }, [eventId, queryClient]);
 
   const addMutation = useMutation({
     mutationFn: async (vars: {

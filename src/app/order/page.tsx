@@ -7,6 +7,7 @@ import OrderItem from "@/components/OrderItem";
 import OrderList from "@/components/OrderList";
 import PageSuspenseFallback from "@/components/PageSuspenseFallback";
 import { CutoffWarningBanner } from "@/components/CutoffWarningBanner";
+import { FinalizeReminderBanner } from "@/components/FinalizeReminderBanner";
 import { useOrders } from "@/hooks/useOrders";
 import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +56,14 @@ function OrderPageContent() {
         cutoffTime={formatCutoffTime(cutoffStatus.cutoffDateTime)}
       />
     );
+  }
+
+  function renderFinalizeReminder() {
+    if (loading) return null;
+    if (cutoffStatus?.isPastCutoff) return null;
+    if (userOrders.length === 0) return null;
+    if (allOrdersSubmitted) return null;
+    return <FinalizeReminderBanner />;
   }
 
   function renderFinalizeArea() {
@@ -108,6 +117,7 @@ function OrderPageContent() {
           </div>
           <OrderItem onOrderAdded={refetch} />
           <OrderList orders={orders} loading={loading} error={error} />
+          {renderFinalizeReminder()}
           {renderFinalizeArea()}
         </div>
       </div>
