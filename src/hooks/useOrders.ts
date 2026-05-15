@@ -40,7 +40,7 @@ export const useOrders = (eventId?: string) => {
   useEffect(() => {
     if (!supabase || !eventId) return;
     const channel = supabase
-      .channel(`orders-${eventId}-${Date.now()}`)
+      .channel(`orders-${eventId}`)
       .on(
         "postgres_changes",
         {
@@ -51,13 +51,10 @@ export const useOrders = (eventId?: string) => {
         (payload) => {
           const row = (payload.new ?? payload.old) as { event_id?: string };
           if (row?.event_id !== eventId) return;
-          console.log("[realtime] orders change", payload);
           queryClient.invalidateQueries({ queryKey: orderKeys.list(eventId) });
         }
       )
-      .subscribe((status, err) => {
-        console.log("[realtime] subscribe status", status, err);
-      });
+      .subscribe();
     return () => {
       supabase?.removeChannel(channel);
     };
