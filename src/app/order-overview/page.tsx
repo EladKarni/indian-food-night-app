@@ -33,9 +33,14 @@ function OrderOverviewPageContent() {
     .size;
   const totalUserCount = new Set(orders.map((o) => o.user_name)).size;
 
-  const pendingTotal = hostRunningTotal * TAX_MULTIPLIER;
+  const totalWithTax = hostRunningTotal * TAX_MULTIPLIER;
+  const paidSubtotal = sumOrderPrices(
+    submittedOrders.filter((o) => o.is_paid)
+  );
+  const collectedTotal = paidSubtotal * TAX_MULTIPLIER;
+  const pendingTotal = Math.max(0, totalWithTax - collectedTotal);
   const showVenmoStrip =
-    isHost && !!hostProfile?.venmo_username && pendingTotal > 0;
+    isHost && !!hostProfile?.venmo_username && totalWithTax > 0;
 
   const eventLabel = formatEventLabel(
     activeEvent?.event_date,
@@ -76,7 +81,10 @@ function OrderOverviewPageContent() {
           {renderHeader()}
 
           {showVenmoStrip && (
-            <VenmoCollectionStrip collected={0} pending={pendingTotal} />
+            <VenmoCollectionStrip
+              collected={collectedTotal}
+              pending={pendingTotal}
+            />
           )}
 
           {renderGuestExtras()}

@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 /* ──────────────────────────────────────────────────────────────
+ * Native-feel mobile defaults
+ * ────────────────────────────────────────────────────────────── */
+html { overscroll-behavior-y: none; }
+body { -webkit-tap-highlight-color: transparent; }
+
+/* ──────────────────────────────────────────────────────────────
  * Indian Food Night — design tokens
  * ────────────────────────────────────────────────────────────── */
 :root,
@@ -28,10 +34,15 @@
   --ifn-pill-chili-bg: #FBEAE6;
   --ifn-pill-chili-ink: var(--ifn-chili);
 
-  /* Always-dark contrast surface (theme-stable; same in light and dark) */
+  /* Always-dark contrast surface (theme-stable; same in light and dark).
+   * Used by .ifn-card--dark when a panel should read as dark no matter the page. */
   --ifn-contrast-surface: #1A1714;
   --ifn-contrast-ink: #F4EEE3;
   --ifn-contrast-ink-muted: #8E8678;
+
+  /* High-contrast button (.ifn-btn--ink): inverts vs. the page so it always pops. */
+  --ifn-btn-ink-bg: #1A1714;
+  --ifn-btn-ink-fg: #F4EEE3;
 
   --ifn-display: var(--font-ifn-display), 'Instrument Serif', Georgia, serif;
   --ifn-ui: var(--font-ifn-ui), ui-sans-serif, -apple-system, system-ui, sans-serif;
@@ -64,6 +75,10 @@
   --ifn-contrast-surface: #1A1714;
   --ifn-contrast-ink: #F4EEE3;
   --ifn-contrast-ink-muted: #8E8678;
+
+  /* Ink button inverts in dark mode so it stays high-contrast against the page. */
+  --ifn-btn-ink-bg: #F4EEE3;
+  --ifn-btn-ink-fg: #1A1714;
 
   color-scheme: dark;
 }
@@ -117,7 +132,7 @@
   box-shadow: inset 0 0 0 1px var(--ifn-border-strong);
 }
 .ifn-btn--ink {
-  background: var(--ifn-contrast-surface); color: var(--ifn-contrast-ink);
+  background: var(--ifn-btn-ink-bg); color: var(--ifn-btn-ink-fg);
 }
 .ifn-btn--soft {
   background: var(--ifn-surface-2); color: var(--ifn-ink);
@@ -217,8 +232,10 @@
 /* Screen scaffold */
 .ifn-screen {
   background: var(--ifn-bg);
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .ifn-screen-pad { padding: 16px 20px 28px; }
 

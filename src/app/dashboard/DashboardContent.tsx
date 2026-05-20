@@ -39,6 +39,16 @@ export default function DashboardContent() {
 
   const isHost = !!user && !!activeEvent && activeEvent.host_id === user.id;
 
+  const confirmedParticipantCount = useMemo(
+    () =>
+      new Set(
+        orders
+          .filter((o) => o.is_submitted)
+          .map((o) => o.user_name)
+      ).size,
+    [orders]
+  );
+
   const firstName = useMemo(
     () =>
       getFirstName(
@@ -89,7 +99,7 @@ export default function DashboardContent() {
           {activeEvent ? (
             <NextEventCard
               event={activeEvent}
-              orderCount={orders.length}
+              orderCount={confirmedParticipantCount}
               isHost={isHost}
             />
           ) : (

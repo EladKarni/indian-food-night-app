@@ -1,30 +1,15 @@
 "use client";
 
-const VenmoIcon = ({ color = "#fff" }: { color?: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill={color}>
-    <path d="M18.6 3.2c.6 1 .9 2.1.9 3.5 0 4.4-3.8 10-6.9 13.7H6.1L3.5 4.7l5.8-.6 1.4 11c1.3-2.1 2.9-5.3 2.9-7.5 0-1.2-.2-2.1-.6-2.8l5.6-1.6z" />
-  </svg>
-);
-
-interface VenmoPayCardProps {
+interface PaidConfirmationCardProps {
   amount: number;
   hostName?: string | null;
-  hostVenmoUsername: string;
-  memo?: string;
 }
 
-export default function VenmoPayCard({
+export default function PaidConfirmationCard({
   amount,
   hostName,
-  hostVenmoUsername,
-  memo,
-}: VenmoPayCardProps) {
-  const handle = hostVenmoUsername.trim().replace(/^@/, "");
-  const noteText = memo ?? "Indian Food Night";
+}: PaidConfirmationCardProps) {
   const amountStr = amount.toFixed(2);
-  const venmoUrl = `https://venmo.com/${handle}?txn=pay&amount=${amountStr}&note=${encodeURIComponent(
-    noteText
-  )}`;
   const displayName = hostName?.trim() || "the host";
 
   return (
@@ -33,7 +18,7 @@ export default function VenmoPayCard({
         marginTop: 18,
         padding: 18,
         borderRadius: 18,
-        background: "linear-gradient(135deg, #3D95CE 0%, #008CFF 100%)",
+        background: "linear-gradient(135deg, #1f7a4d 0%, #2fa86a 100%)",
         color: "#fff",
         position: "relative",
         overflow: "hidden",
@@ -53,14 +38,13 @@ export default function VenmoPayCard({
           pointerEvents: "none",
         }}
       >
-        V
+        ✓
       </div>
       <div
         style={{
           display: "flex",
           alignItems: "flex-start",
           gap: 12,
-          marginBottom: 14,
           position: "relative",
         }}
       >
@@ -74,9 +58,11 @@ export default function VenmoPayCard({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
+            fontSize: 20,
+            fontWeight: 700,
           }}
         >
-          <VenmoIcon />
+          ✓
         </div>
         <div style={{ flex: 1 }}>
           <div
@@ -87,7 +73,7 @@ export default function VenmoPayCard({
               opacity: 0.75,
             }}
           >
-            Pay {displayName} for Food Order
+            Paid in full
           </div>
           <div
             className="ifn-num ifn-display"
@@ -96,37 +82,9 @@ export default function VenmoPayCard({
             ${amountStr}
           </div>
           <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
-            <span style={{ opacity: 0.7 }}>to</span>{" "}
-            <span style={{ fontWeight: 500 }}>@{handle}</span>
+            Thanks — {displayName} marked your order as paid.
           </div>
         </div>
-      </div>
-      <a
-        href={venmoUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="ifn-btn ifn-btn--full"
-        style={{
-          background: "#fff",
-          color: "#008CFF",
-          fontWeight: 600,
-          position: "relative",
-          textDecoration: "none",
-        }}
-      >
-        <VenmoIcon color="#008CFF" />
-        Open Venmo
-      </a>
-      <div
-        style={{
-          fontSize: 11,
-          opacity: 0.7,
-          marginTop: 10,
-          textAlign: "center",
-          position: "relative",
-        }}
-      >
-        Memo prefilled: &ldquo;{noteText}&rdquo;
       </div>
     </div>
   );

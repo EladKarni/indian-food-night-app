@@ -15,12 +15,59 @@ export default function VenmoCollectionStrip({
   collected,
   pending,
 }: VenmoCollectionStripProps) {
+  const total = collected + pending;
+  const isFullyCollected = total > 0 && pending <= 0;
+  const isEmpty = collected <= 0;
+  const pct = total > 0 ? Math.min(100, (collected / total) * 100) : 0;
+
+  const iconTileBg = isFullyCollected
+    ? "var(--ifn-pill-green-bg)"
+    : "#008CFF";
+  const iconColor = isFullyCollected ? "var(--ifn-pill-green-ink)" : "#fff";
+
+  function renderLabel() {
+    if (isFullyCollected) {
+      return (
+        <>
+          <div style={{ fontSize: 12, color: "var(--ifn-muted)" }}>
+            Venmo collected
+          </div>
+          <div className="ifn-num" style={{ fontSize: 15, fontWeight: 500 }}>
+            All collected · ${total.toFixed(2)}
+          </div>
+        </>
+      );
+    }
+    if (isEmpty) {
+      return (
+        <>
+          <div style={{ fontSize: 12, color: "var(--ifn-muted)" }}>
+            Awaiting Venmos
+          </div>
+          <div className="ifn-num" style={{ fontSize: 15, fontWeight: 500 }}>
+            ${pending.toFixed(2)} pending
+          </div>
+        </>
+      );
+    }
+    return (
+      <>
+        <div style={{ fontSize: 12, color: "var(--ifn-muted)" }}>
+          Venmo collected
+        </div>
+        <div className="ifn-num" style={{ fontSize: 15, fontWeight: 500 }}>
+          ${collected.toFixed(2)}{" "}
+          <span style={{ color: "var(--ifn-subtle)", fontWeight: 400 }}>
+            of ${total.toFixed(2)}
+          </span>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
         padding: "12px 14px",
         marginBottom: 18,
         borderRadius: 14,
@@ -28,31 +75,44 @@ export default function VenmoCollectionStrip({
         border: "1px solid var(--ifn-border)",
       }}
     >
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 10,
-          background: "#008CFF",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <VenmoIcon />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: "var(--ifn-muted)" }}>
-          Venmo collected
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            background: iconTileBg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            transition: "background 150ms ease",
+          }}
+        >
+          <VenmoIcon color={iconColor} />
         </div>
-        <div className="ifn-num" style={{ fontSize: 15, fontWeight: 500 }}>
-          ${collected.toFixed(2)}{" "}
-          <span style={{ color: "var(--ifn-subtle)", fontWeight: 400 }}>
-            · ${pending.toFixed(2)} pending
-          </span>
-        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>{renderLabel()}</div>
       </div>
+      {!isFullyCollected && (
+        <div
+          style={{
+            marginTop: 10,
+            height: 4,
+            borderRadius: 999,
+            background: "var(--ifn-border)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${pct}%`,
+              background: "var(--ifn-primary)",
+              transition: "width 200ms ease",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

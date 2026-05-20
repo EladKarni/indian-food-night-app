@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { BackIcon, MoreIcon } from "@/ui/icons";
+import { BackIcon } from "@/ui/icons";
+import ThemeToggle from "@/ui/ThemeToggle";
 
 interface OrderPageTopbarProps {
   restaurant: string;
@@ -21,9 +22,7 @@ export default function OrderPageTopbar({ restaurant }: OrderPageTopbarProps) {
         <div className="ifn-topbar-eyebrow">Ordering from</div>
         <div className="ifn-topbar-title">{restaurant}</div>
       </div>
-      <span className="ifn-topbar-btn">
-        <MoreIcon />
-      </span>
+      <ThemeToggle />
     </div>
   );
 }

@@ -16,8 +16,8 @@ import OrderModeFooter from "./OrderModeFooter";
 import LargePartyHint from "./LargePartyHint";
 
 const DEFAULT_RESTAURANT = "Coriander Grill";
-const RESTAURANT_PHONE = "(415) 555-0142";
-const LARGE_PARTY_THRESHOLD = 2;
+const RESTAURANT_PHONE = "(412) 904-3654";
+const LARGE_PARTY_THRESHOLD = 3;
 
 function OrderModePageContent() {
   const router = useRouter();

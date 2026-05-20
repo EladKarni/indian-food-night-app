@@ -10,32 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -44,7 +19,7 @@ export type Database = {
           created_at: string | null
           cutoff_minutes_before: number | null
           event_date: string
-          host_id: string | null
+          host_id: string
           id: string
           location: string
           restaurant: string | null
@@ -55,7 +30,7 @@ export type Database = {
           created_at?: string | null
           cutoff_minutes_before?: number | null
           event_date: string
-          host_id?: string | null
+          host_id: string
           id?: string
           location: string
           restaurant?: string | null
@@ -66,7 +41,7 @@ export type Database = {
           created_at?: string | null
           cutoff_minutes_before?: number | null
           event_date?: string
-          host_id?: string | null
+          host_id?: string
           id?: string
           location?: string
           restaurant?: string | null
@@ -170,6 +145,7 @@ export type Database = {
           event_id: string
           id: string
           is_indian_hot: boolean | null
+          is_paid: boolean
           is_submitted: boolean | null
           menu_item_id: string
           special_instructions: string | null
@@ -182,6 +158,7 @@ export type Database = {
           event_id: string
           id?: string
           is_indian_hot?: boolean | null
+          is_paid?: boolean
           is_submitted?: boolean | null
           menu_item_id: string
           special_instructions?: string | null
@@ -194,6 +171,7 @@ export type Database = {
           event_id?: string
           id?: string
           is_indian_hot?: boolean | null
+          is_paid?: boolean
           is_submitted?: boolean | null
           menu_item_id?: string
           special_instructions?: string | null
@@ -203,17 +181,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "order_items_menu_item_id_fkey"
-            columns: ["menu_item_id"]
-            isOneToOne: false
-            referencedRelation: "menu_items"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "orders_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
         ]
@@ -388,9 +366,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

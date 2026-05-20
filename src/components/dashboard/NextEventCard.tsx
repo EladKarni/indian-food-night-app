@@ -69,7 +69,7 @@ export default function NextEventCard({
       >
         {eventTime && <span className="ifn-pill">{eventTime}</span>}
         <span className="ifn-pill">{orderCount} joined</span>
-        {isHost && <span className="ifn-pill ifn-pill--accent">You host</span>}
+        {isHost && <span className="ifn-pill ifn-pill--accent">Hosting</span>}
       </div>
       <Link
         href="/order"

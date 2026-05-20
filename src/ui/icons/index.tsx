@@ -60,7 +60,7 @@ export const AppPhoneIcon = ({
 );
 
 export const PlusIcon = ({
-  color = "#fff",
+  color = "currentColor",
   size = 18,
 }: AppIconProps = {}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
