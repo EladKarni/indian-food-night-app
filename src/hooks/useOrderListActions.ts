@@ -19,7 +19,7 @@ interface Options {
 }
 
 export function useOrderListActions({ activeEvent, ordersHook }: Options) {
-  const { addOrder, removeOrder, updateOrder } = ordersHook;
+  const { addOrder, removeOrder, updateOrder, setAttendeePaid } = ordersHook;
   const { guestName } = useGuestName();
 
   const handleRemoveOrder = useCallback(
@@ -80,10 +80,26 @@ export function useOrderListActions({ activeEvent, ordersHook }: Options) {
     [updateOrder]
   );
 
+  const handleToggleAttendeePaid = useCallback(
+    async (userName: string, isPaid: boolean) => {
+      if (!activeEvent) {
+        console.error("Missing active event");
+        return;
+      }
+      try {
+        await setAttendeePaid(activeEvent.id, userName, isPaid);
+      } catch (e) {
+        console.error("Failed to update attendee paid status:", e);
+      }
+    },
+    [activeEvent, setAttendeePaid]
+  );
+
   return {
     handleRemoveOrder,
     handleDuplicateOrder,
     handleEditOrder,
     handleToggleSubmitted,
+    handleToggleAttendeePaid,
   };
 }

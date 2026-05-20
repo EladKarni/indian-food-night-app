@@ -2,6 +2,7 @@
 
 import { OrderWithMenuItem } from "@/hooks/useOrders";
 import VenmoPayCard from "./VenmoPayCard";
+import PaidConfirmationCard from "./PaidConfirmationCard";
 
 interface OrderListTotalsProps {
   orders: OrderWithMenuItem[];
@@ -43,7 +44,13 @@ export default function OrderListTotals({
   const tax = sub * 0.07;
   const total = sub + tax;
   const handle = hostVenmoUsername?.trim().replace(/^@/, "");
-  const showVenmoCard = !isHostView && !!handle && total > 0;
+  const isGuestFullyPaid =
+    !isHostView &&
+    ordersForCalculation.length > 0 &&
+    ordersForCalculation.every((o) => o.is_paid);
+  const showVenmoCard =
+    !isHostView && !!handle && total > 0 && !isGuestFullyPaid;
+  const showPaidCard = isGuestFullyPaid && total > 0;
   const memoDate = formatMemoDate(eventDate);
   const memo = memoDate ? `IFN · ${memoDate}` : "Indian Food Night";
 
@@ -82,6 +89,10 @@ export default function OrderListTotals({
           <span>${total.toFixed(2)}</span>
         </div>
       </div>
+
+      {showPaidCard && (
+        <PaidConfirmationCard amount={total} hostName={hostName} />
+      )}
 
       {showVenmoCard && handle && (
         <VenmoPayCard

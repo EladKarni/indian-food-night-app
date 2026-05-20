@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { BackIcon, MoreIcon } from "@/ui/icons";
+import { BackIcon } from "@/ui/icons";
+import ThemeToggle from "@/ui/ThemeToggle";
 
 interface OrderOverviewTopbarProps {
   isHost: boolean;
@@ -31,9 +32,7 @@ export default function OrderOverviewTopbar({
           {isHost ? "Group order" : "Order placed"}
         </div>
       </div>
-      <span className="ifn-topbar-btn">
-        <MoreIcon />
-      </span>
+      <ThemeToggle />
     </div>
   );
 }
