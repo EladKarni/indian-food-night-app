@@ -10,14 +10,13 @@ import { useActiveEvent } from "@/hooks/useActiveEvent";
 import { useOrders } from "@/hooks/useOrders";
 import { useHostProfile } from "@/hooks/useHostProfile";
 import { formatEventLabel } from "@/util/dateUtils";
-import { sumOrderPrices } from "@/util/orderGrouping";
+import { excludeHostOrders, sumOrderPrices } from "@/util/orderGrouping";
+import { TAX_MULTIPLIER } from "@/util/tax";
 import OrderOverviewTopbar from "./OrderOverviewTopbar";
 import HostRunningTotalCard from "./HostRunningTotalCard";
 import GuestConfirmedHeader from "./GuestConfirmedHeader";
 import OrderOverviewFooter from "./OrderOverviewFooter";
 import GuestSetHint from "./GuestSetHint";
-
-const TAX_MULTIPLIER = 1.07;
 
 function OrderOverviewPageContent() {
   const { user } = useAuth();
@@ -33,14 +32,19 @@ function OrderOverviewPageContent() {
     .size;
   const totalUserCount = new Set(orders.map((o) => o.user_name)).size;
 
-  const totalWithTax = hostRunningTotal * TAX_MULTIPLIER;
+  const collectibleOrders = excludeHostOrders(
+    submittedOrders,
+    activeEvent?.host_id
+  );
+  const collectibleSubtotal = sumOrderPrices(collectibleOrders);
+  const collectibleTotalWithTax = collectibleSubtotal * TAX_MULTIPLIER;
   const paidSubtotal = sumOrderPrices(
-    submittedOrders.filter((o) => o.is_paid)
+    collectibleOrders.filter((o) => o.is_paid)
   );
   const collectedTotal = paidSubtotal * TAX_MULTIPLIER;
-  const pendingTotal = Math.max(0, totalWithTax - collectedTotal);
+  const pendingTotal = Math.max(0, collectibleTotalWithTax - collectedTotal);
   const showVenmoStrip =
-    isHost && !!hostProfile?.venmo_username && totalWithTax > 0;
+    isHost && !!hostProfile?.venmo_username && collectibleTotalWithTax > 0;
 
   const eventLabel = formatEventLabel(
     activeEvent?.event_date,

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { OrderWithMenuItem } from "@/hooks/useOrders";
+import { TAX_RATE } from "@/util/tax";
 
 export interface GroupedOrder {
   item_name: string;
@@ -11,8 +12,6 @@ export interface GroupedOrder {
   total_cost: number;
   indian_hot_count: number;
 }
-
-const TAX_RATE = 0.07;
 
 export function useGroupedSubmittedOrders(orders: OrderWithMenuItem[]) {
   const submittedOrders = useMemo(

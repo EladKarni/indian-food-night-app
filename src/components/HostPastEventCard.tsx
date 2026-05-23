@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { HostPastEvent } from "@/hooks/useHostPastEvents";
 import { shouldShowSpiceSelector } from "@/util/spiceUtil";
+import { TAX_MULTIPLIER, TAX_RATE } from "@/util/tax";
 
 interface HostPastEventCardProps {
   event: HostPastEvent;
@@ -19,7 +20,7 @@ export default function HostPastEventCard({ event }: HostPastEventCardProps) {
     year: "numeric",
   });
 
-  const grandTotalWithTax = event.grandTotal * 1.07;
+  const grandTotalWithTax = event.grandTotal * TAX_MULTIPLIER;
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
@@ -80,7 +81,7 @@ export default function HostPastEventCard({ event }: HostPastEventCardProps) {
                       {group.displayName}
                     </span>
                     <span className="text-xs text-slate-500">
-                      ${(group.subtotal * 1.07).toFixed(2)}
+                      ${(group.subtotal * TAX_MULTIPLIER).toFixed(2)}
                     </span>
                   </div>
 
@@ -137,7 +138,7 @@ export default function HostPastEventCard({ event }: HostPastEventCardProps) {
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
                   <span>Tax (7%):</span>
-                  <span>${(event.grandTotal * 0.07).toFixed(2)}</span>
+                  <span>${(event.grandTotal * TAX_RATE).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between pt-1 border-t border-slate-200">
                   <span className="text-sm font-bold text-slate-800">Group Total:</span>

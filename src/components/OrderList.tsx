@@ -106,24 +106,30 @@ export const OrderList = ({
     <div>
       {renderHeader()}
 
-      {Object.entries(ordersByUser).map(([userName, userOrders]) => (
-        <OrderListUserGroup
-          key={userName}
-          userName={userName}
-          orders={userOrders}
-          isCurrentUser={userName === currentUserName}
-          showHeader={showUserGroupHeader}
-          showUserTotal={isOverviewPage}
-          isHostView={isHostView}
-          isOverviewPage={isOverviewPage}
-          isEditMode={isEditMode}
-          onRemove={actions.handleRemoveOrder}
-          onDuplicate={actions.handleDuplicateOrder}
-          onEdit={actions.handleEditOrder}
-          onToggleSubmitted={actions.handleToggleSubmitted}
-          onTogglePaid={actions.handleToggleAttendeePaid}
-        />
-      ))}
+      {Object.entries(ordersByUser).map(([userName, userOrders]) => {
+        const isHostRow =
+          !!activeEvent?.host_id &&
+          userOrders[0]?.user_id === activeEvent.host_id;
+        return (
+          <OrderListUserGroup
+            key={userName}
+            userName={userName}
+            orders={userOrders}
+            isCurrentUser={userName === currentUserName}
+            isHostRow={isHostRow}
+            showHeader={showUserGroupHeader}
+            showUserTotal={isOverviewPage}
+            isHostView={isHostView}
+            isOverviewPage={isOverviewPage}
+            isEditMode={isEditMode}
+            onRemove={actions.handleRemoveOrder}
+            onDuplicate={actions.handleDuplicateOrder}
+            onEdit={actions.handleEditOrder}
+            onToggleSubmitted={actions.handleToggleSubmitted}
+            onTogglePaid={actions.handleToggleAttendeePaid}
+          />
+        );
+      })}
 
       {renderFooterTotals()}
     </div>

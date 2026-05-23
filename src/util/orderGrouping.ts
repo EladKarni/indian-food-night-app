@@ -23,6 +23,16 @@ export function sumOrderPrices(orders: OrderWithMenuItem[]): number {
   return orders.reduce((sum, o) => sum + o.menu_items.price, 0);
 }
 
+// The host collects from attendees but doesn't pay themselves — use this to
+// filter orders down to the ones that count toward Venmo collection.
+export function excludeHostOrders(
+  orders: OrderWithMenuItem[],
+  hostId: string | null | undefined
+): OrderWithMenuItem[] {
+  if (!hostId) return orders;
+  return orders.filter((o) => o.user_id !== hostId);
+}
+
 function buildVariantKey(order: OrderWithMenuItem): string {
   const spice = order.spice_level ?? "null";
   const indianHot = order.is_indian_hot ? 1 : 0;

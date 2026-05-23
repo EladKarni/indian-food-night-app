@@ -12,6 +12,7 @@ interface OrderListUserGroupProps {
   userName: string;
   orders: OrderWithMenuItem[];
   isCurrentUser: boolean;
+  isHostRow?: boolean;
   showHeader: boolean;
   showUserTotal: boolean;
   isHostView: boolean;
@@ -35,6 +36,7 @@ export default function OrderListUserGroup({
   userName,
   orders,
   isCurrentUser,
+  isHostRow = false,
   showHeader,
   showUserTotal,
   isHostView,
@@ -57,10 +59,10 @@ export default function OrderListUserGroup({
   const isAttendeePaid =
     ordersForTotal.length > 0 && ordersForTotal.every((o) => o.is_paid);
   const showPaidToggle =
-    isHostView && isOverviewPage && ordersForTotal.length > 0;
+    isHostView && isOverviewPage && ordersForTotal.length > 0 && !isHostRow;
   const showSelfPaidIndicator =
     !isHostView && isCurrentUser && isOverviewPage && isAttendeePaid;
-  const dimRow = isAttendeePaid && isOverviewPage;
+  const dimRow = isAttendeePaid && isOverviewPage && !isHostRow;
 
   // In host edit mode on the overview, render flat one-per-row groups so the
   // per-order submit-toggle pill keeps working unchanged.

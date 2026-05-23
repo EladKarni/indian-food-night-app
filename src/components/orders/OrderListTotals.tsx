@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderWithMenuItem } from "@/hooks/useOrders";
+import { TAX_RATE } from "@/util/tax";
 import VenmoPayCard from "./VenmoPayCard";
 import PaidConfirmationCard from "./PaidConfirmationCard";
 
@@ -41,7 +42,7 @@ export default function OrderListTotals({
     return null;
   }
 
-  const tax = sub * 0.07;
+  const tax = sub * TAX_RATE;
   const total = sub + tax;
   const handle = hostVenmoUsername?.trim().replace(/^@/, "");
   const isGuestFullyPaid =
