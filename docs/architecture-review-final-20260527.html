@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture review — final (reconciled) — indian-food-night-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      h1, h2, h3, .font-serif { font-family: Georgia, "Times New Roman", serif; }
+      .label  { font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; }
+      .deep   { background: linear-gradient(135deg, #1c1917, #292524); color: #f5f5f4; }
+      .mermaid { display: flex; justify-content: center; }
+      code { font-size: .8em; background: #f5f5f4; padding: 1px 4px; border-radius: 3px; }
+      .verdict-real    { background:#dcfce7; color:#166534; }
+      .verdict-partial { background:#fef9c3; color:#854d0e; }
+      .verdict-false   { background:#fee2e2; color:#991b1b; }
+      .src { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-stone-900 antialiased">
+    <main class="max-w-5xl mx-auto px-6 py-14 space-y-12">
+
+      <!-- ===================== HEADER ===================== -->
+      <header class="border-b border-stone-200 pb-6 space-y-3">
+        <p class="label text-stone-400">Reconciled review · supersedes the two drafts</p>
+        <h1 class="text-3xl font-serif">Architecture review — final</h1>
+        <p class="text-stone-500">indian-food-night-app · 2026-05-27</p>
+        <p class="text-stone-600 max-w-3xl leading-relaxed">
+          Two earlier reviews sit in <code>docs/</code>: a prose-led one
+          (<code>architecture-review-20260526.html</code>) and a diagram-led one
+          (<code>architecture-review-visual-20260526.html</code>). They agree on the headline —
+          <strong>money math is scattered and untested</strong> — but each found bugs the other missed,
+          and each contains at least one claim that does not survive contact with the source.
+          This document re-reads every claim against the code, marks each
+          <span class="verdict-real px-1.5 py-0.5 rounded label">confirmed</span>,
+          <span class="verdict-partial px-1.5 py-0.5 rounded label">partly true</span>, or
+          <span class="verdict-false px-1.5 py-0.5 rounded label">not real</span>,
+          and lays out one sequenced plan.
+        </p>
+      </header>
+
+      <!-- ===================== SCORECARD ===================== -->
+      <section class="space-y-4">
+        <h2 class="text-2xl font-serif">What survived verification</h2>
+        <p class="text-stone-600 text-sm max-w-3xl">Every row below was read at the source on 2026-05-27. Verdicts are about the <em>claim as written</em>, not the underlying idea.</p>
+        <div class="overflow-x-auto rounded-xl border border-stone-200">
+          <table class="w-full text-sm">
+            <thead class="bg-stone-100 text-stone-600">
+              <tr class="text-left label">
+                <th class="px-3 py-2">From</th>
+                <th class="px-3 py-2">Claim</th>
+                <th class="px-3 py-2">Verdict</th>
+                <th class="px-3 py-2">What the code actually shows</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-200">
+              <tr>
+                <td class="px-3 py-2 text-stone-500">both #1</td>
+                <td class="px-3 py-2">Totals math scattered; <code>TAX_RATE</code> vs <code>TAX_MULTIPLIER</code> drift</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600">overview uses <code>* TAX_MULTIPLIER</code>; OrderListTotals &amp; useGroupedSubmittedOrders use <code>* TAX_RATE + sub</code>; HostPastEventCard uses both. <code>tax.ts</code> exports 2 constants, no function.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">visual #2</td>
+                <td class="px-3 py-2"><code>excludeHostOrders</code> applied at only 1 of 3 total sites</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600">Applied in <code>order-overview</code> only. <code>useGroupedSubmittedOrders</code> and <code>useHostPastEvents.grandTotal</code> sum every order, host included.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">visual #5</td>
+                <td class="px-3 py-2"><code>AuthContext</code> imports <code>next/router</code> → <code>signOut</code> throws</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600"><code>AuthContext.tsx:6</code> <code>import router from "next/router"</code> in an App-Router app; <code>:65</code> calls <code>router.push("/")</code>. The prose review missed this entirely.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">visual #5</td>
+                <td class="px-3 py-2"><code>setAttendeePaid</code> flips <code>is_paid</code> with no host check</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600"><code>useOrders.ts:138</code> updates by <code>(event_id, user_name)</code> only. <code>eventService</code> checks <code>host_id</code> for delete/update; this write does not. RLS is the only possible guard (unverified).</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">both</td>
+                <td class="px-3 py-2">No tests / no test tooling at all</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600">No <code>*.test.*</code> files; no jest/vitest/playwright in <code>package.json</code>.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">visual #4</td>
+                <td class="px-3 py-2">Attendee-identity chain copied "5×"</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed (undercount)</span></td>
+                <td class="px-3 py-2 text-stone-600">The order-name chain <code>full_name||email||guestName</code> appears in ~8 spots (useOrders, useAddOrderForm, order/page, OrderList, OrderListItem, usePastEvents, reorderUtils×2, orderUtil×2). It is the grouping/paid join key.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">prose #3</td>
+                <td class="px-3 py-2">Two ~80% identical past-events fetchers</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600"><code>usePastEvents</code> (filter user) &amp; <code>useHostPastEvents</code> (filter host) each re-inline the events+orders+menu_items join, the <code>event_date &lt; today</code> filter, and per-user grouping. Both compute totals with <strong>no tax</strong>.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">prose #5</td>
+                <td class="px-3 py-2">Two date parsers disagree on cutoff</td>
+                <td class="px-3 py-2"><span class="verdict-partial px-2 py-0.5 rounded label">Real, mis-framed</span></td>
+                <td class="px-3 py-2 text-stone-600">True that <code>cutoffUtil</code> parses local (<code>replace(/-/g,"/")</code>) and <code>timeUtils.calculateCutoffTimeString</code> parses UTC (<code>new Date(eventDate)</code>). But the finalize <em>gate</em> only calls <code>cutoffUtil</code>; <code>timeUtils</code> is used for the create/edit <em>preview</em>. So it is a <strong>preview-vs-gate</strong> mismatch, not two gates.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">prose #2</td>
+                <td class="px-3 py-2">Two order-intake paths; "pages call supabase directly"</td>
+                <td class="px-3 py-2"><span class="verdict-partial px-2 py-0.5 rounded label">Half true</span></td>
+                <td class="px-3 py-2 text-stone-600">Two writers is real: <code>useOrders.addMutation</code> (React-Query) and <code>addOrderUtil</code> (used by <code>useAddOrderForm</code>) duplicate the same insert + join. But <strong>no page inserts orders directly</strong> — every write goes through useOrders / orderUtil / reorderUtils.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">prose #4</td>
+                <td class="px-3 py-2">OrderList dual-mode (props OR hook), props unused</td>
+                <td class="px-3 py-2"><span class="verdict-real px-2 py-0.5 rounded label">Confirmed</span></td>
+                <td class="px-3 py-2 text-stone-600"><code>OrderList.tsx:41-43</code> does <code>propOrders ?? ordersHook.orders</code>; the <code>orders/loading/error</code> props are declared but no caller passes them.</td>
+              </tr>
+              <tr>
+                <td class="px-3 py-2 text-stone-500">prose #6</td>
+                <td class="px-3 py-2">Over-granular OrderListItem fragments — re-absorb</td>
+                <td class="px-3 py-2"><span class="verdict-partial px-2 py-0.5 rounded label">Cosmetic</span></td>
+                <td class="px-3 py-2 text-stone-600">Fragments exist and are local-only, but this is the lowest-leverage item — no correctness impact. Defer.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== WHERE THEY DIVERGED ===================== -->
+      <section class="space-y-4">
+        <h2 class="text-2xl font-serif">Where the two drafts diverged — and who was right</h2>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div class="rounded-xl border border-stone-200 bg-white p-5 space-y-2">
+            <p class="label text-emerald-700">Visual review got these, prose missed them</p>
+            <ul class="list-disc pl-5 text-stone-600 space-y-1">
+              <li>The <code>signOut</code> / <code>next/router</code> runtime bug — a real crash.</li>
+              <li>Host-exclusion applied at only one of three totals (silent over-charge).</li>
+              <li><code>setAttendeePaid</code> with no host authority check.</li>
+              <li>Attendee identity as a first-class scattered concept.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-stone-200 bg-white p-5 space-y-2">
+            <p class="label text-emerald-700">Prose review got these, visual missed them</p>
+            <ul class="list-disc pl-5 text-stone-600 space-y-1">
+              <li>The duplicated order-intake writers (<code>addOrderUtil</code> vs <code>addMutation</code>).</li>
+              <li>The two duplicated past-events fetchers.</li>
+              <li>The cutoff parsing inconsistency.</li>
+              <li>OrderList's phantom dual-mode interface.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-stone-200 bg-white p-5 space-y-2">
+            <p class="label text-red-700">Claims to retire</p>
+            <ul class="list-disc pl-5 text-stone-600 space-y-1">
+              <li>"Pages call supabase directly" (prose #2) — they don't.</li>
+              <li>"Two cutoff <em>gates</em>" — there is one gate; the other parser is display-only.</li>
+              <li>"5×" identity (visual #4) undercounts — it's ~8.</li>
+              <li>OrderListItem re-absorb (prose #6) — true but cosmetic; not in the plan's critical path.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-stone-500 text-sm max-w-3xl">
+          The drafts were complementary, not contradictory. The visual review was better at <em>correctness/security</em> bugs;
+          the prose review was better at <em>duplication/structure</em>. The synthesis below keeps the bugs first.
+        </p>
+      </section>
+
+      <!-- ===================== THE CORE INSIGHT ===================== -->
+      <section class="deep rounded-xl p-8 space-y-3">
+        <p class="label text-stone-400">The single root cause</p>
+        <h2 class="text-2xl font-serif">There is no module that owns money, and none that owns identity.</h2>
+        <p class="text-stone-300 max-w-3xl leading-relaxed">
+          Every confirmed money bug — tax-rate drift, host included in two of three totals, no-tax past-event totals,
+          hidden <code class="text-stone-100">Math.max(0, pending)</code> — is the same failure: arithmetic is re-derived at each
+          call site instead of computed once behind an interface. The identity bug is the mirror image: the join key that
+          decides <em>who owes what</em> is an inline expression in ~8 files. Fix the two seams and most of the list collapses.
+        </p>
+      </section>
+
+      <!-- ===================== THE PLAN ===================== -->
+      <section class="space-y-6">
+        <h2 class="text-2xl font-serif">The final plan</h2>
+        <p class="text-stone-600 text-sm max-w-3xl">Sequenced so each step makes the next safer. Steps 0–1 are cheap and stop active bleeding; 2–4 build the two seams; 5–7 lean on them; 8 is optional cleanup.</p>
+
+        <pre class="mermaid">
+flowchart TD
+  S0["0 · Fix signOut import<br/>(crash, 1 line)"]:::fix
+  S1["1 · Guard is_paid host authority<br/>(verify/add RLS)"]:::fix
+  S2["2 · Totals module<br/>orders,hostId → {subtotal,tax,total,collected,pending}"]:::deep
+  S3["3 · Identity module<br/>attendeeName(user,guest)"]:::deep
+  S4["4 · Add the first tests<br/>(table-test Totals + identity)"]:::test
+  S5["5 · Route all totals through Totals"]:::use
+  S6["6 · Merge past-events fetchers (scope param)"]:::use
+  S7["7 · One order-intake seam"]:::use
+  S8["8 · cutoff parse unify · OrderList prop cleanup · inline fragments"]:::opt
+
+  S0 --> S2
+  S1 --> S2
+  S2 --> S4
+  S3 --> S4
+  S4 --> S5
+  S2 --> S5
+  S3 --> S6
+  S5 --> S6
+  S5 --> S7
+  S6 --> S8
+  S7 --> S8
+
+  classDef fix  fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+  classDef deep fill:#1c1917,stroke:#1c1917,color:#f5f5f4;
+  classDef test fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+  classDef use  fill:#dcfce7,stroke:#16a34a,color:#14532d;
+  classDef opt  fill:#f5f5f4,stroke:#a8a29e,color:#57534e;
+        </pre>
+
+        <div class="space-y-4">
+          <!-- step 0 -->
+          <div class="rounded-xl border border-red-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="verdict-false px-2 py-0.5 rounded label">Step 0 · bug</span>
+              <h3 class="font-serif text-lg">Fix the <code>signOut</code> crash</h3>
+            </div>
+            <p class="text-stone-600 text-sm">Replace <code>import router from "next/router"</code> in <code>AuthContext.tsx</code> with <code>useRouter</code> from <code>next/navigation</code>, called inside the provider. One line of cause, a guaranteed runtime throw on every sign-out. No reason to wait.</p>
+            <p class="src text-stone-400 mt-2">src/contexts/AuthContext.tsx:6, :65</p>
+          </div>
+
+          <!-- step 1 -->
+          <div class="rounded-xl border border-red-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="verdict-false px-2 py-0.5 rounded label">Step 1 · security</span>
+              <h3 class="font-serif text-lg">Confirm who may flip <code>is_paid</code></h3>
+            </div>
+            <p class="text-stone-600 text-sm">The client sends an update keyed only on <code>(event_id, user_name)</code>. If Supabase RLS does not already restrict <code>orders.is_paid</code> writes to the event's host, any authenticated user can mark anyone paid. Verify the policy in the dashboard; add one if missing. This is a data-integrity hole independent of the refactors.</p>
+            <p class="src text-stone-400 mt-2">src/hooks/useOrders.ts:129-147 · cross-check src/lib/eventService.ts:63,82</p>
+          </div>
+
+          <!-- step 2 -->
+          <div class="rounded-xl border border-stone-300 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="deep px-2 py-0.5 rounded label">Step 2 · seam</span>
+              <h3 class="font-serif text-lg">Build the Totals module</h3>
+            </div>
+            <p class="text-stone-600 text-sm">One pure module: <code>computeBill(orders, { hostId, onlySubmitted })</code> → <code>{ subtotal, tax, total, collected, pending }</code>. It owns the tax rate, host-exclusion, the submitted filter, the paid/unpaid split, and rounding. This single module fixes <strong>three</strong> confirmed bugs at once: rate-vs-multiplier drift, host-included totals, and the no-tax past-event totals.</p>
+            <p class="src text-stone-400 mt-2">new: src/util/totals.ts · folds in tax.ts + the collection math from order-overview/page.tsx:35-45</p>
+          </div>
+
+          <!-- step 3 -->
+          <div class="rounded-xl border border-stone-300 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="deep px-2 py-0.5 rounded label">Step 3 · seam</span>
+              <h3 class="font-serif text-lg">Build the identity resolver</h3>
+            </div>
+            <p class="text-stone-600 text-sm">One function: <code>attendeeName(user, guestName)</code> returning the canonical <code>user_name</code>. Every order write and every grouping/paid lookup reads it. Eliminates the ~8 inline copies of the fallback chain, and makes the grouping key impossible to drift per-file.</p>
+            <p class="src text-stone-400 mt-2">new: src/util/attendee.ts · callers at useOrders:75, useAddOrderForm:29, order/page:34, OrderList:48, OrderListItem:46, usePastEvents:28, reorderUtils:31/70, orderUtil:32/109</p>
+          </div>
+
+          <!-- step 4 -->
+          <div class="rounded-xl border border-blue-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="px-2 py-0.5 rounded label" style="background:#dbeafe;color:#1e3a8a">Step 4 · tests</span>
+              <h3 class="font-serif text-lg">Add the first test surface</h3>
+            </div>
+            <p class="text-stone-600 text-sm">Add Vitest (lightest setup for a Next 15 / TS repo). Table-test <code>computeBill</code> (tax rounding, host exclusion on/off, all-paid, partial-paid, empty) and <code>attendeeName</code> (user / email-only / guest / collision). This is the repo's first test — and steps 2–3 were designed to be pure so this is trivial.</p>
+            <p class="src text-stone-400 mt-2">new: src/util/totals.test.ts, src/util/attendee.test.ts · add vitest + script to package.json</p>
+          </div>
+
+          <!-- step 5 -->
+          <div class="rounded-xl border border-emerald-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="verdict-real px-2 py-0.5 rounded label">Step 5 · adopt</span>
+              <h3 class="font-serif text-lg">Route every total through the module</h3>
+            </div>
+            <p class="text-stone-600 text-sm">Replace the inline arithmetic in <code>order-overview/page.tsx</code>, <code>OrderListTotals.tsx</code>, <code>useGroupedSubmittedOrders.ts</code>, and <code>HostPastEventCard.tsx</code> with calls to <code>computeBill</code>. Delete the bare <code>TAX_RATE</code>/<code>TAX_MULTIPLIER</code> imports at the call sites. After this the host-exclusion and no-tax bugs cannot recur.</p>
+            <p class="src text-stone-400 mt-2">edits across the 4 totals call sites + tax.ts becomes internal</p>
+          </div>
+
+          <!-- step 6 -->
+          <div class="rounded-xl border border-emerald-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="verdict-real px-2 py-0.5 rounded label">Step 6 · adopt</span>
+              <h3 class="font-serif text-lg">Merge the two past-events fetchers</h3>
+            </div>
+            <p class="text-stone-600 text-sm">One hook <code>usePastEvents(scope: "mine" | "hosted")</code>. The join string, the <code>event_date &lt; today</code> filter, and grouping (via the shared <code>groupOrdersByUser</code>) live once; totals come from <code>computeBill</code>, so the no-tax/host-included discrepancies vanish. Deletes ~100 duplicated lines.</p>
+            <p class="src text-stone-400 mt-2">merge src/hooks/usePastEvents.ts + src/hooks/useHostPastEvents.ts</p>
+          </div>
+
+          <!-- step 7 -->
+          <div class="rounded-xl border border-emerald-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="verdict-real px-2 py-0.5 rounded label">Step 7 · adopt</span>
+              <h3 class="font-serif text-lg">Collapse order intake to one writer</h3>
+            </div>
+            <p class="text-stone-600 text-sm">Make <code>useOrders</code>' React-Query mutation the single insert path; fold <code>addOrderUtil</code> (used by <code>useAddOrderForm</code>) into it so the join string and cache invalidation live in one place. Keep <code>reorderUtils</code> only if its bulk insert genuinely differs; otherwise route it through too. (Note: contrary to the prose draft, no page writes directly — scope is the three util/hook writers, not the pages.)</p>
+            <p class="src text-stone-400 mt-2">src/hooks/useOrders.ts:63-91 · src/util/orderUtil.ts:20-48 · src/hooks/useAddOrderForm.ts:86 · src/util/reorderUtils.ts</p>
+          </div>
+
+          <!-- step 8 -->
+          <div class="rounded-xl border border-stone-200 bg-white p-5">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="px-2 py-0.5 rounded label" style="background:#f5f5f4;color:#57534e">Step 8 · optional</span>
+              <h3 class="font-serif text-lg">Cleanups, lowest leverage last</h3>
+            </div>
+            <ul class="text-stone-600 text-sm list-disc pl-5 space-y-1">
+              <li><strong>Cutoff parse:</strong> have <code>timeUtils.calculateCutoffTimeString</code> reuse <code>cutoffUtil</code>'s local-parse (or share one parser) so the create/edit preview matches the gate.</li>
+              <li><strong>OrderList:</strong> drop the unused <code>orders/loading/error</code> props — no caller passes them — and let the hook be the one source.</li>
+              <li><strong>OrderListItem fragments:</strong> inline the sub-30-line display pieces only if no reuse is planned. Cosmetic; no correctness impact.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== TOP RECOMMENDATION ===================== -->
+      <section class="bg-stone-900 text-stone-100 rounded-xl p-8 space-y-3">
+        <p class="label text-stone-400">Do this first</p>
+        <h2 class="text-2xl font-serif">Step 0 today, then build the Totals module.</h2>
+        <p class="text-stone-300 max-w-3xl leading-relaxed">
+          Both drafts agreed the Totals module is the keystone, and verification confirms it — but the visual review surfaced
+          a <em>shipping crash</em> (<code class="text-stone-100">signOut</code>) and a <em>silent over-charge / auth hole</em> that the prose draft
+          never saw. Land the two one-step fixes first (they are independent and cheap), then build <code class="text-stone-100">computeBill</code>:
+          it is the deepest concept in the app, the most scattered, and the seam that steps 5–7 all lean on. It also gives the
+          repo its first real test surface.
+        </p>
+      </section>
+
+      <footer class="text-sm text-stone-500 border-t border-stone-200 pt-6 space-y-1">
+        <p>Reconciles <code>docs/architecture-review-20260526.html</code> (prose) and <code>docs/architecture-review-visual-20260526.html</code> (visual). Where they conflicted, the code decided.</p>
+        <p>No <code>CONTEXT.md</code> or <code>docs/adr/</code> in the repo; domain terms (Event, Order, Attendee/Guest, Host, Totals, Venmo collection, cutoff) inferred from code and existing names. Every verdict above was read at the source on 2026-05-27.</p>
+      </footer>
+
+    </main>
+  </body>
+</html>
