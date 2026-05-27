@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture review — indian-food-night-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .faded { opacity: 0.38; }
+      .grain { background-image: radial-gradient(#0000000a 1px, transparent 1px); background-size: 14px 14px; }
+      .label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans grain">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-14">
+      <!-- HEADER -->
+      <header class="space-y-5">
+        <div class="flex items-baseline justify-between flex-wrap gap-2">
+          <h1 class="text-4xl font-serif tracking-tight">Architecture review</h1>
+          <p class="font-mono text-sm text-slate-500">indian-food-night-app · 2026-05-26</p>
+        </div>
+        <p class="text-slate-600 max-w-3xl">
+          The codebase has already been split fine — small components, many hooks, a query layer.
+          The friction now is the opposite of monoliths: <strong>scatter</strong>. The same domain logic
+          is re-implemented behind several shallow modules, and the deepest concept in the app — money math —
+          has no single seam to test through.
+        </p>
+        <div class="flex flex-wrap gap-4 text-xs text-slate-600 border-t border-slate-200 pt-4">
+          <span class="flex items-center gap-2"><span class="inline-block w-5 h-3 border border-slate-400 bg-white"></span> module</span>
+          <span class="flex items-center gap-2"><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="#475569" stroke-width="1.5" class="seam"/></svg> seam</span>
+          <span class="flex items-center gap-2"><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="#dc2626" stroke-width="2"/></svg> leak / duplication</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-5 h-3 deep rounded-sm"></span> deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 1 — TOTALS -->
+        <!-- ============================================================ -->
+        <article id="c1" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">1 · Collapse the Order totals math into one deep module</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/util/tax.ts · src/util/orderGrouping.ts · src/app/order-overview/page.tsx:29–45 ·
+              src/components/orders/OrderListTotals.tsx:32–46 · src/hooks/useGroupedSubmittedOrders.ts:55–61 ·
+              src/components/HostPastEventCard.tsx:23,84,141 · src/hooks/usePastEvents.ts:74–77
+            </p>
+
+            <!-- before/after -->
+            <div class="grid md:grid-cols-2 gap-5">
+              <!-- BEFORE -->
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">Before — math re-orchestrated per caller</p>
+                <div class="space-y-2 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-slate-400 w-24 shrink-0">tax.ts</span>
+                    <span class="px-2 py-1 rounded bg-slate-900 text-white">TAX_RATE · TAX_MULTIPLIER</span>
+                  </div>
+                  <svg height="14" width="100%"><line x1="60" y1="0" x2="60" y2="14" stroke="#cbd5e1" stroke-width="1"/></svg>
+                  <div class="space-y-2">
+                    <div class="border border-red-300 bg-red-50 rounded p-2">
+                      <p class="font-semibold text-red-800">order-overview page</p>
+                      <p class="font-mono text-[11px] text-red-700">sub * TAX_MULTIPLIER → collected / pending</p>
+                    </div>
+                    <div class="border border-red-300 bg-red-50 rounded p-2">
+                      <p class="font-semibold text-red-800">OrderListTotals</p>
+                      <p class="font-mono text-[11px] text-red-700">tax = sub * TAX_RATE; total = sub + tax</p>
+                    </div>
+                    <div class="border border-red-300 bg-red-50 rounded p-2">
+                      <p class="font-semibold text-red-800">useGroupedSubmittedOrders</p>
+                      <p class="font-mono text-[11px] text-red-700">tax = sub * TAX_RATE; total = sub + tax</p>
+                    </div>
+                    <div class="border border-red-300 bg-red-50 rounded p-2">
+                      <p class="font-semibold text-red-800">HostPastEventCard</p>
+                      <p class="font-mono text-[11px] text-red-700">grandTotal * TAX_MULTIPLIER … * TAX_RATE</p>
+                    </div>
+                    <div class="border border-amber-300 bg-amber-50 rounded p-2">
+                      <p class="font-semibold text-amber-800">usePastEvents</p>
+                      <p class="font-mono text-[11px] text-amber-700">total_spent = subtotal — <strong>no tax</strong></p>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-500 pt-1">5 orchestrations · 2 constants · 0 tests</p>
+                </div>
+              </div>
+
+              <!-- AFTER -->
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">After — one deep module, callers read totals</p>
+                <div class="flex flex-col items-center gap-3 pt-4">
+                  <div class="grid grid-cols-2 gap-2 w-full text-[11px]">
+                    <div class="border border-slate-200 rounded p-2 text-center text-slate-500">overview page</div>
+                    <div class="border border-slate-200 rounded p-2 text-center text-slate-500">OrderListTotals</div>
+                    <div class="border border-slate-200 rounded p-2 text-center text-slate-500">grouped hook</div>
+                    <div class="border border-slate-200 rounded p-2 text-center text-slate-500">past-event cards</div>
+                  </div>
+                  <svg height="26" width="60"><line x1="30" y1="0" x2="30" y2="26" stroke="#475569" stroke-width="1.5" class="seam"/><polygon points="26,18 34,18 30,26" fill="#475569"/></svg>
+                  <div class="deep text-white rounded-lg w-full p-4 text-center">
+                    <p class="label text-emerald-300">deep module</p>
+                    <p class="font-semibold mt-1">computeBill(orders, opts)</p>
+                    <p class="text-[11px] text-slate-300 mt-2 leading-relaxed">
+                      filters (submitted / paid / exclude-host),<br/> subtotal, tax, total — internal
+                    </p>
+                  </div>
+                  <p class="text-[11px] text-slate-500">interface: 1 call → {subtotal, tax, total, collected, pending}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600">Five callers each re-derive subtotal/tax/total their own way; one drops tax entirely, two pick different constants.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">One module that takes orders + intent (host-collect, guest-share, group) and returns the figures. Callers stop doing arithmetic.</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Locality: every money bug lives in one module</li>
+                <li>The interface is the test surface</li>
+                <li>Leverage: one rule, 5 call sites</li>
+                <li>Tax/no-tax discrepancy becomes impossible</li>
+                <li>TAX_RATE vs TAX_MULTIPLIER drift gone</li>
+                <li>Deletion test: complexity concentrates, not moves</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 2 — TWO ADD-ORDER PATHS -->
+        <!-- ============================================================ -->
+        <article id="c2" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">2 · One Order intake seam, not two</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/hooks/useOrders.ts:63–147 · src/util/orderUtil.ts (212 lines) ·
+              src/util/reorderUtils.ts · src/hooks/useAddOrderForm.ts · pages calling supabase directly
+            </p>
+
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="label text-slate-400 mb-2">Before — two parallel writers to the orders table</p>
+              <pre class="mermaid">
+flowchart TB
+  subgraph RQ["React Query path"]
+    H["useOrders.addMutation"] --> S1["supabase.from('orders').insert(...).select('*, menu_items(*)')"]
+  end
+  subgraph RAW["raw util path"]
+    F["useAddOrderForm"] --> U["addOrderUtil"]
+    U --> S2["supabase.from('orders').insert(...).select('*, menu_items(*)')"]
+    F -.manual refetch.-> H
+  end
+  RE["reorderUtils"] --> S3["supabase.from('orders').insert(...)"]
+  classDef leak stroke:#dc2626,stroke-width:2px,fill:#fef2f2;
+  class S1,S2,S3 leak
+              </pre>
+              <p class="text-[11px] text-slate-500 mt-2">
+                Same insert + same <span class="font-mono">"*, menu_items (*)"</span> join written 3×. Util path skips
+                React&nbsp;Query, so callers manually re-fetch and realtime invalidation diverges.
+              </p>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="label text-slate-400 mb-2">After — intake funnels through one seam</p>
+              <pre class="mermaid">
+flowchart TB
+  H["useOrders / useAddOrderForm"] --> O["Order intake module<br/>(add · duplicate · reorder)"]
+  O --> S["supabase.from('orders') — one insert, one join string"]
+  O -. invalidates .-> Q["orderKeys.list"]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class O deep
+              </pre>
+              <p class="text-[11px] text-slate-500 mt-2">One writer. Invalidation and the join string live behind it.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600"><span class="font-mono text-xs">addOrderUtil</span> duplicates <span class="font-mono text-xs">addMutation</span>; one auto-invalidates, the other needs a manual refetch. Two ways to do the same write.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">Pick the React-Query path as the single seam; fold <span class="font-mono text-xs">orderUtil</span> / <span class="font-mono text-xs">reorderUtils</span> writes into it. Delete the raw duplicates.</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Join string defined once</li>
+                <li>Invalidation can't be forgotten</li>
+                <li>Delete ~6 shallow util wrappers</li>
+                <li>One null-supabase check, not 12</li>
+                <li>Leverage: caller learns one writer</li>
+                <li>Stale-data bugs from manual refetch gone</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 3 — PAST EVENTS DUPLICATION -->
+        <!-- ============================================================ -->
+        <article id="c3" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">3 · Merge the two past-events fetchers</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/hooks/usePastEvents.ts (104 lines) · src/hooks/useHostPastEvents.ts (120 lines)
+            </p>
+
+            <!-- mass diagram -->
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">Before — two ~80% identical hooks</p>
+                <div class="flex justify-around items-end h-44">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-20 bg-red-200 border border-red-300 rounded-t" style="height:120px"></div>
+                    <span class="font-mono text-[10px] text-slate-500">usePastEvents</span>
+                    <span class="text-[10px] text-red-700">filter: user_id</span>
+                  </div>
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-20 bg-red-200 border border-red-300 rounded-t" style="height:120px"></div>
+                    <span class="font-mono text-[10px] text-slate-500">useHostPastEvents</span>
+                    <span class="text-[10px] text-red-700">filter: host_id</span>
+                  </div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2 text-center">Both: same join, same date filter, inline grouping &amp; subtotals. Fix a bug → fix it twice.</p>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">After — one fetcher, parameterised</p>
+                <div class="flex flex-col items-center justify-center h-44 gap-3">
+                  <div class="deep text-white rounded-lg px-6 py-5 text-center">
+                    <p class="label text-emerald-300">deep module</p>
+                    <p class="font-semibold mt-1">usePastEvents(scope)</p>
+                    <p class="text-[11px] text-slate-300 mt-1">scope: mine | hosted</p>
+                  </div>
+                  <p class="text-[11px] text-slate-500">one query, one grouping, one place for tax</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600">Two hooks differ only by which column they filter on, yet each re-implements the join, date math, and per-user grouping.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">One hook taking a scope. Grouping reuses <span class="font-mono text-xs">groupOrdersByUser</span>; totals reuse the module from candidate 1.</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Locality: history math in one hook</li>
+                <li>Guest "no-tax" bug fixed once, everywhere</li>
+                <li>Delete ~100 duplicated lines</li>
+                <li>Inline grouping reuses the shared util</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 4 — ORDERLIST DUAL MODE -->
+        <!-- ============================================================ -->
+        <article id="c4" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">4 · Resolve OrderList's dual-mode interface</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/components/OrderList.tsx:41–43 · all call sites pass flags, none pass orders
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">Before — props OR hook, decided at runtime</p>
+                <div class="space-y-2 text-xs">
+                  <div class="border border-red-300 bg-red-50 rounded p-3 font-mono text-[11px] text-red-800">
+                    orders = propOrders ?? ordersHook.orders<br/>
+                    loading = propLoading ?? ordersHook.loading<br/>
+                    error = propError ?? ordersHook.error
+                  </div>
+                  <p class="text-[11px] text-slate-500">
+                    Caller must know which half is live. The <span class="font-mono">orders / loading / error</span> props
+                    are part of the interface but unused everywhere.
+                  </p>
+                  <p class="text-[11px] text-slate-500">Plus 6 hooks + filter + group + sum + edit state in one 139-line module.</p>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">After — one source of orders</p>
+                <div class="space-y-3 pt-2">
+                  <div class="border border-slate-300 rounded p-3 text-center text-xs">
+                    <p class="font-semibold text-slate-700">OrderList (view)</p>
+                    <p class="text-[11px] text-slate-500 mt-1">takes orders + view flags</p>
+                  </div>
+                  <svg height="22" width="100%"><line x1="50%" y1="0" x2="50%" y2="22" stroke="#475569" stroke-width="1.5" class="seam"/></svg>
+                  <div class="deep text-white rounded p-3 text-center text-xs">
+                    <p class="font-semibold">useOrders (one owner of data)</p>
+                  </div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-3">Drop the unused props, or commit to props-only. One mode.</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600">The interface advertises an injectable-orders mode no caller uses; the module silently falls back to its own hook.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">Remove the dead props (the seam isn't real — one adapter, not two), or make orders a required prop and lift the hook to the pages.</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Interface shrinks to what's used</li>
+                <li>One adapter ≠ a seam — stop pretending</li>
+                <li>Testable: feed orders, assert render</li>
+                <li>No ambiguity about data source</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 5 — CUTOFF TIMEZONE -->
+        <!-- ============================================================ -->
+        <article id="c5" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">5 · One cutoff/event-time module</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/util/cutoffUtil.ts:29 · src/util/timeUtils.ts:54 · gate at src/app/order/page.tsx:63
+            </p>
+
+            <!-- cross section -->
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">Before — two date parsers disagree</p>
+                <div class="space-y-2">
+                  <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">
+                    <p class="font-mono text-[11px] text-red-800">cutoffUtil: new Date(date.replace(/-/g,'/'))</p>
+                    <p class="text-[10px] text-red-600">→ parsed as LOCAL time</p>
+                  </div>
+                  <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">
+                    <p class="font-mono text-[11px] text-red-800">timeUtils: new Date(eventDate)</p>
+                    <p class="text-[10px] text-red-600">→ ISO parsed as UTC</p>
+                  </div>
+                  <p class="text-[11px] text-slate-500">Same event, two cutoff instants on a non-UTC host. This gates finalize.</p>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-4">
+                <p class="label text-slate-400 mb-3">After — one parse, one rule</p>
+                <div class="flex flex-col items-center justify-center h-full gap-3 pt-2">
+                  <div class="deep text-white rounded-lg px-5 py-4 text-center">
+                    <p class="label text-emerald-300">deep module</p>
+                    <p class="font-semibold mt-1">eventTiming(event)</p>
+                    <p class="text-[11px] text-slate-300 mt-1">cutoffStatus · cutoffLabel · isPast</p>
+                  </div>
+                  <p class="text-[11px] text-slate-500 text-center">parsing decided once, behind the interface</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600">Two date-math implementations parse <span class="font-mono text-xs">event_date</span> differently; the finalize gate trusts one of them.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">One module owns event-time parsing and cutoff computation; both the form preview and the gate call it.</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Locality: timezone decision in one place</li>
+                <li>Form preview matches the gate</li>
+                <li>The interface is the test surface</li>
+                <li>Fix DST/UTC once</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- ============================================================ -->
+        <!-- CANDIDATE 6 — OVER-GRANULAR ORDERLISTITEM -->
+        <!-- ============================================================ -->
+        <article id="c6" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-6 space-y-5">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">Speculative</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">in-process</span>
+              <h2 class="text-2xl font-serif">6 · Re-absorb the tiniest OrderListItem fragments</h2>
+            </div>
+
+            <p class="font-mono text-xs text-slate-500 leading-relaxed">
+              src/components/orders/ — OrderListItemTitle (35) · OrderListItemSpiceLine (33) ·
+              OrderListItemPrice (41) · OrderListItemSubmitToggle (25) into OrderListItemView (122)
+            </p>
+
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="label text-slate-400 mb-2">Before — 10 files to read one order row</p>
+              <pre class="mermaid">
+flowchart TB
+  L[OrderList] --> G[OrderListUserGroup]
+  G --> I[OrderListItem]
+  I --> V[OrderListItemView]
+  V --> T[Title]
+  V --> SL[SpiceLine]
+  V --> P[Price]
+  V --> ST[SubmitToggle]
+  V --> A[Actions]
+  classDef tiny fill:#fef9c3,stroke:#ca8a04;
+  class T,SL,P,ST tiny
+              </pre>
+              <p class="text-[11px] text-slate-500 mt-2">Yellow = sub-30-line display fragments used only here. Deletion test: inlining each grows the view ~20%, well under a comfortable size.</p>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+              <p class="label text-slate-400 mb-2">After — fragments folded into the view</p>
+              <pre class="mermaid">
+flowchart TB
+  L[OrderList] --> G[OrderListUserGroup]
+  G --> I[OrderListItem]
+  I --> V["OrderListItemView<br/>(title · spice · price · toggle inline)"]
+  V --> A[Actions]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class V deep
+              </pre>
+              <p class="text-[11px] text-slate-500 mt-2">5 files → 1 readable view. Actions stays split (it owns the QuantityStepper + handlers).</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm pt-1">
+              <div>
+                <p class="font-semibold text-slate-800">Problem</p>
+                <p class="text-slate-600">Display-only fragments are so thin that understanding one row means hopping across files for no leverage.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-slate-800">Solution</p>
+                <p class="text-slate-600">Inline the sub-30-line pure-display pieces into the view. Keep the genuinely deep ones (Actions, Editor).</p>
+              </div>
+            </div>
+
+            <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+              Judgement call. None are reused outside OrderList today, so depth is low — but if reuse is planned, leave them.
+            </div>
+
+            <div>
+              <p class="font-semibold text-slate-800 text-sm mb-2">Wins</p>
+              <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600 list-disc list-inside">
+                <li>Read one row in one file</li>
+                <li>Fewer shallow modules to navigate</li>
+                <li>Interface = props of one view</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- TOP RECOMMENDATION -->
+      <section id="top-recommendation">
+        <div class="deep text-white rounded-xl p-7 shadow-lg">
+          <p class="label text-emerald-300 mb-2">Top recommendation</p>
+          <h2 class="text-2xl font-serif mb-3">Start with #1 — collapse the totals math.</h2>
+          <p class="text-slate-300 max-w-3xl leading-relaxed">
+            It's the deepest concept in the app (Venmo collection, host totals, guest shares) and the most scattered:
+            five orchestrations, two constants, and one path that silently drops tax — all untested. A single
+            <span class="font-mono text-emerald-200">computeBill</span> module gives the codebase its first real test
+            surface and removes a whole class of money bugs. Candidates #2 and #3 then have something solid to lean on.
+          </p>
+          <a href="#c1" class="inline-block mt-4 text-emerald-300 text-sm hover:text-emerald-200">→ jump to candidate 1</a>
+        </div>
+        <p class="text-center text-xs text-slate-400 mt-6">No CONTEXT.md or docs/adr/ present — domain terms above (Order, host, cutoff, Venmo collection) inferred from code.</p>
+      </section>
+    </main>
+  </body>
+</html>
