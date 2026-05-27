@@ -72,7 +72,7 @@ export default function NextEventCard({
         {isHost && <span className="ifn-pill ifn-pill--accent">Hosting</span>}
       </div>
       <Link
-        href="/order"
+        href={isHost ? "/order-overview" : "/order"}
         className="ifn-btn ifn-btn--primary ifn-btn--full"
         style={{ position: "relative" }}
       >
