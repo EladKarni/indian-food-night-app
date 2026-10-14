@@ -4,14 +4,16 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateEvent } from "@/hooks/useCreateEvent";
 import { useCreateEventForm } from "@/hooks/useCreateEventForm";
+import { useHostProfile } from "@/hooks/useHostProfile";
 import CreateEventForm from "./CreateEventForm";
 import CreateEventTopbar from "./CreateEventTopbar";
 
 export default function CreateEventContent() {
   const { user } = useAuth();
   const router = useRouter();
+  const { hostProfile } = useHostProfile(user?.id);
   const { values, handleChange, cutoffPreview } = useCreateEventForm({
-    defaultLocation: user?.user_metadata.address,
+    defaultLocation: hostProfile?.address ?? user?.user_metadata.address,
   });
   const { createEvent, loading } = useCreateEvent();
 

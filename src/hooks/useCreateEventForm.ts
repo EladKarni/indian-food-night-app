@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getNextWednesday } from "@/util/dateUtils";
 import { calculateCutoffTimeString } from "@/util/timeUtils";
 
@@ -30,6 +30,19 @@ export const useCreateEventForm = ({
   const [values, setValues] = useState<CreateEventFormValues>(() =>
     buildInitialValues(defaultLocation)
   );
+
+  // The profile address loads async; apply it unless the user already edited the location.
+  const appliedDefault = useRef(defaultLocation ?? "");
+  useEffect(() => {
+    if (!defaultLocation) return;
+    const previousDefault = appliedDefault.current;
+    appliedDefault.current = defaultLocation;
+    setValues((prev) =>
+      prev.location === previousDefault
+        ? { ...prev, location: defaultLocation }
+        : prev
+    );
+  }, [defaultLocation]);
 
   const handleChange = useCallback(
     (
